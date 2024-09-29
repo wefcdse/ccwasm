@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "ccwasm",
+	"version": "${version}",
+	"name": "ccwasm",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/ccwasm/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.iung.ccwasm.Ccwasm"
+		],
+		"client": [
+			"com.iung.ccwasm.CcwasmClient"
+		],
+		"fabric-datagen": [
+			"com.iung.ccwasm.CcwasmDataGenerator"
+		]
+	},
+	"mixins": [
+		"ccwasm.mixins.json",
+		{
+			"config": "ccwasm.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.5",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
