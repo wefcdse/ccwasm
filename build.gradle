@@ -37,18 +37,26 @@ loom {
 
 }
 
+fabricApi {
+    configureDataGeneration()
+}
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    modCompileOnly("cc.tweaked:cc-tweaked-1.20.1-fabric-api:1.111.0")
+    modImplementation("cc.tweaked:cc-tweaked-1.20.1-fabric:1.111.0")
+    implementation 'com.dylibso.chicory:runtime:0.0.12'
+    implementation 'com.dylibso.chicory:wasi:0.0.12'
+//    implementation("org.graalvm.polyglot:polyglot:23.1.1")
+//    implementation("org.graalvm.polyglot:wasm:23.1.1")
 
-    modCompileOnly("cc.tweaked:cc-tweaked-1.20.1-fabric-api:1.108.4")
-    modImplementation("cc.tweaked:cc-tweaked-1.20.1-fabric:1.108.4")
+
 }
 
 processResources {
