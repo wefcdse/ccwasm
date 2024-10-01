@@ -2,16 +2,16 @@
 	"schemaVersion": 1,
 	"id": "ccwasm",
 	"version": "${version}",
-	"name": "ccwasm",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "cc wasm",
+	"description": "add wasm support for computer craft",
 	"authors": [
-		"Me!"
+		"iung"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/wefcdse/ccwasm",
+		"sources": "https://github.com/wefcdse/ccwasm"
 	},
-	"license": "CC0-1.0",
+	"license": "GPL-3.0",
 	"icon": "assets/ccwasm/icon.png",
 	"environment": "*",
 	"entrypoints": {
@@ -34,6 +34,6 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"another-mod": "*"
+		"computercraft": ">=1.111.0"
 	}
 }
