@@ -123,6 +123,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cc_wasm_api"
+version = "0.1.0"
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1663,6 +1667,7 @@ checksum = "c62a0a307cb4a311d3a07867860911ca130c3494e8c2719593806c08bc5d0484"
 name = "wasmlib"
 version = "0.1.0"
 dependencies = [
+ "cc_wasm_api",
  "rustpython-vm",
 ]
 
