@@ -6,6 +6,7 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import com.iung.ccwasm.Ccwasm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +50,10 @@ public class HostFuncs {
                 export_f64(),
                 abort_next_import(),
                 success(),
-                failed()
+                failed(),
+                import_obj(),
+                export_obj(),
+                drop_obj(),
         };
     }
 
@@ -181,5 +185,37 @@ public class HostFuncs {
             ioHandler.fail();
             return null;
         }, MOD_NAME, "failed", List.of(), List.of());
+    }
+
+    public HostFunction import_obj() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            int key = 0;
+            try {
+                IOValue obj = ioHandler.to_wasm.poll();
+//                Ccwasm.LOGGER.info("{}", obj);
+
+                key = ioHandler.obj_hold.put(Objects.requireNonNull(obj).data);
+            } catch (Exception e) {
+                Ccwasm.LOGGER.info("{}", e.getMessage());
+            }
+            return new Value[]{Value.i32(key)};
+        }, MOD_NAME, "import_obj", List.of(), List.of(ValueType.I32));
+    }
+
+    public HostFunction export_obj() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            int key = args[0].asInt();
+            var obj = ioHandler.obj_hold.get(key);
+            ioHandler.from_wasm.add(IOValue.of_obj(obj));
+            return null;
+        }, MOD_NAME, "export_obj", List.of(ValueType.I32), List.of());
+    }
+
+    public HostFunction drop_obj() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            int key = args[0].asInt();
+            ioHandler.obj_hold.drop(key);
+            return null;
+        }, MOD_NAME, "drop_obj", List.of(ValueType.I32), List.of());
     }
 }

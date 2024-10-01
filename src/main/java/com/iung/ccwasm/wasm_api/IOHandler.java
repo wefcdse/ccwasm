@@ -1,5 +1,7 @@
 package com.iung.ccwasm.wasm_api;
 
+import com.iung.ccwasm.utils.SlotMap;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -7,12 +9,14 @@ public class IOHandler {
 
     public Queue<IOValue> to_wasm;
     public Queue<IOValue> from_wasm;
+    public SlotMap obj_hold;
     public boolean failed;
 
     public IOHandler() {
         this.to_wasm = new LinkedList<>();
         this.from_wasm = new LinkedList<>();
         this.failed = false;
+        this.obj_hold = new SlotMap();
     }
 
     public void clear_all() {

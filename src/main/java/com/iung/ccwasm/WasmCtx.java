@@ -48,20 +48,26 @@ public class WasmCtx implements IDynamicLuaObject {
 
     @Override
     public MethodResult callMethod(ILuaContext context, int method, IArguments arguments) throws LuaException {
-        this.ioHandler.clear_all();
-        for (int i = 0; i < arguments.count(); i++) {
-            ioHandler.push(IOValue.of_obj(arguments.get(i)));
-        }
-        ExportFunction a = this.wasm_instance.export(methods[method]);
-        a.apply();
-        if(this.ioHandler.failed){
-            var except = new LuaException(Objects.requireNonNull(this.ioHandler.from_wasm.poll()).asString());
+//        Ccwasm.LOGGER.info("wasm ctx: Slots {}", ioHandler.obj_hold.count());
+        try {
             this.ioHandler.clear_all();
-            throw except;
+            for (int i = 0; i < arguments.count(); i++) {
+                ioHandler.push(IOValue.of_obj(arguments.get(i)));
+            }
+            ExportFunction a = this.wasm_instance.export(methods[method]);
+            a.apply();
+            if (this.ioHandler.failed) {
+                var except = new LuaException(Objects.requireNonNull(this.ioHandler.from_wasm.poll()).asString());
+                this.ioHandler.clear_all();
+                throw except;
+            }
+            var rtn = this.ioHandler.from_wasm.stream().map(IOValue::asObject).toArray();
+            this.ioHandler.clear_all();
+            return MethodResult.of(rtn);
+        } catch (Exception e) {
+            this.ioHandler.clear_all();
+            throw new LuaException(e.getMessage());
         }
-        var rtn = this.ioHandler.from_wasm.stream().map(IOValue::asObject).toArray();
-        this.ioHandler.clear_all();
-        return MethodResult.of(rtn);
     }
 
 

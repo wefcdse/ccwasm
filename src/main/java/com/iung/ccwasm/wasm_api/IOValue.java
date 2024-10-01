@@ -7,6 +7,7 @@ public class IOValue {
     public static final int F32 = 4;
     public static final int F64 = 5;
     public static final int Type = 6;
+    public static final int Table = 7;
 
     public int type;
     public Object data;
@@ -81,7 +82,7 @@ public class IOValue {
         if (data instanceof String) {
             return IOValue.of((String) data);
         }
-        return new IOValue(255, data);
+        return new IOValue(Table, data);
     }
 
 }

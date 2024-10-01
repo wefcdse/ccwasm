@@ -47,6 +47,12 @@ public class Api1 implements ILuaAPI {
         }
     }
 
+//    @LuaFunction
+//    public final void type(ILuaContext ctx, IArguments args) throws LuaException {
+//        Ccwasm.LOGGER.info("{}", args.getType(0));
+//        Ccwasm.LOGGER.info("{}", ctx.getClass());
+//        Ccwasm.LOGGER.info("{}", args.getClass());
+//    }
 
     @Override
     public void startup() {

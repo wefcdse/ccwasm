@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 
 public class Ccwasm implements ModInitializer {
-    public static Identifier RECEIVER_BLOCK_ID = Identifier.of(Ccwasm.MOD_ID, "receiver_block");
-    public static final Block RECEIVER_BLOCK = registerBlock(RECEIVER_BLOCK_ID, new Block(FabricBlockSettings.copyOf(Blocks.REDSTONE_BLOCK)));
+//    public static Identifier RECEIVER_BLOCK_ID = Identifier.of(Ccwasm.MOD_ID, "receiver_block");
+//    public static final Block RECEIVER_BLOCK = registerBlock(RECEIVER_BLOCK_ID, new Block(FabricBlockSettings.copyOf(Blocks.REDSTONE_BLOCK)));
 
     public static final String MOD_ID = "ccwasm";
 
@@ -36,12 +36,12 @@ public class Ccwasm implements ModInitializer {
 
     }
 
-    private static Block registerBlock(Identifier id, Block block) {
-        registerBlockItem(id, block);
-        return Registry.register(Registries.BLOCK, id, block);
-    }
-
-    private static void registerBlockItem(Identifier id, Block block) {
-        Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()));
-    }
+//    private static Block registerBlock(Identifier id, Block block) {
+//        registerBlockItem(id, block);
+//        return Registry.register(Registries.BLOCK, id, block);
+//    }
+//
+//    private static void registerBlockItem(Identifier id, Block block) {
+//        Registry.register(Registries.ITEM, id, new BlockItem(block, new Item.Settings()));
+//    }
 }
