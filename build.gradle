@@ -1,6 +1,7 @@
 plugins {
     id 'fabric-loom' version '1.7-SNAPSHOT'
     id 'maven-publish'
+    id 'com.gradleup.shadow' version '8.3.2'
 }
 
 version = project.mod_version
@@ -51,13 +52,21 @@ dependencies {
 
     modCompileOnly("cc.tweaked:cc-tweaked-1.20.1-fabric-api:1.111.0")
     modImplementation("cc.tweaked:cc-tweaked-1.20.1-fabric:1.111.0")
-    implementation 'com.dylibso.chicory:runtime:0.0.12'
-    implementation 'com.dylibso.chicory:wasi:0.0.12'
+    api shadow ('com.dylibso.chicory:runtime:0.0.12')
+    api shadow ('com.dylibso.chicory:wasi:0.0.12')
 //    implementation("org.graalvm.polyglot:polyglot:23.1.1")
 //    implementation("org.graalvm.polyglot:wasm:23.1.1")
 
 
 }
+tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
+    dependencies {
+        exclude {
+            it.moduleGroup != 'com.dylibso.chicory'
+        }
+    }
+}
+
 
 processResources {
     inputs.property "version", project.version

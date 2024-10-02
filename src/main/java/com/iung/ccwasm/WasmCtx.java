@@ -49,6 +49,7 @@ public class WasmCtx implements IDynamicLuaObject {
     @Override
     public MethodResult callMethod(ILuaContext context, int method, IArguments arguments) throws LuaException {
 //        Ccwasm.LOGGER.info("wasm ctx: Slots {}", ioHandler.obj_hold.count());
+
         try {
             this.ioHandler.clear_all();
             for (int i = 0; i < arguments.count(); i++) {

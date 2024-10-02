@@ -18,9 +18,7 @@
 		"main": [
 			"com.iung.ccwasm.Ccwasm"
 		],
-		"client": [
-			"com.iung.ccwasm.CcwasmClient"
-		],
+
 		"fabric-datagen": [
 			"com.iung.ccwasm.CcwasmDataGenerator"
 		]
