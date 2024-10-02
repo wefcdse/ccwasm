@@ -1,7 +1,5 @@
-use std::fmt::Debug;
-
 use rustpython_vm::compiler::Mode;
-use rustpython_vm::{AsObject, Interpreter};
+use rustpython_vm::Interpreter;
 fn main() {
     let e = Interpreter::without_stdlib(Default::default());
     let res = e.enter(|vm| {
