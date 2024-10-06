@@ -1,23 +1,34 @@
-use rustpython_vm::compiler::Mode;
-use rustpython_vm::Interpreter;
+use std::{
+    any::{self, Any},
+    borrow::Cow,
+    hint::{black_box, unreachable_unchecked},
+    mem::forget,
+    panic::{self, catch_unwind, PanicInfo},
+};
+
 fn main() {
-    let e = Interpreter::without_stdlib(Default::default());
-    let res = e.enter(|vm| {
-        let scope = vm.new_scope_with_builtins();
-        let source = include_str!("1.py");
-        let code_obj = vm
-            .compile(source, Mode::BlockExpr, "<embedded>".to_owned())
-            .map_err(|err| vm.new_syntax_error(&err, Some(source)))
-            .unwrap();
+    unsafe { unreachable_unchecked() };
+    panic::set_hook(Box::new(|info| {
+        dbg!(info.payload().type_id());
+    }));
 
-        // let a = vm.run_block_expr(scope.clone(), source);
-        let a = vm.run_code_obj(code_obj, scope).unwrap();
-
-        let scope = vm.new_scope_with_builtins();
-        scope.locals.set_item("a", a, vm).unwrap();
-        let a = vm.run_block_expr(scope, "str(a)").unwrap();
-
-        format!("here ! {}", a.str(vm).unwrap())
-    });
-    dbg!(res);
+    let a = || {
+        panic!("aa{}a", black_box(32));
+    };
+    dbg!(a.type_id());
+    let r: Box<dyn Any + Send> = catch_unwind(a).unwrap_err();
+    // drop(r);
+    dbg!(r.type_id());
+    dbg!(r.is::<&'static str>());
+    dbg!(r.downcast_ref::<&'static str>());
+    dbg!(r.downcast_ref::<String>());
+    // dbg!(r.downcast_ref::<String>());
+    // dbg!(any::TypeId::of::<String>());
+    // dbg!(any::TypeId::of::<&'static str>());
+    // dbg!(any::TypeId::of::<Cow<'static, str>>());
+    // dbg!(any::TypeId::of::<()>());
+    // dbg!(any::TypeId::of::<str>());
+    // dbg!(any::TypeId::of::<PanicInfo>());
+    // forget(r);
+    println!("here");
 }

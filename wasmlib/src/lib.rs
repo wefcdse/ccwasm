@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::future::Future;
 use std::marker::{PhantomData, PhantomPinned};
+use std::panic::{catch_unwind, PanicInfo};
 use std::task::Poll;
 use std::time::Duration;
 
@@ -15,7 +17,7 @@ static C: SyncNonSync<UnsyncChannel<String>> = SyncNonSync(UnsyncChannel::new(10
 fn b(a: Option<Number>, b: Option<Number>) -> String {
     format!("{:?},{:?}", a, b)
 }
-
+// static INITED: SyncNonSync<RefCell<bool>> = SyncNonSync(RefCell::new(false));
 fn aa() {
     spawn(async {
         loop {
@@ -35,6 +37,10 @@ fn aa() {
             sleep(Duration::from_secs(1)).await;
             yield_lua().await;
         }
+    });
+    spawn(async {
+        yield_now().await;
+        spawn(async {});
     });
 
     // spawn(async {
