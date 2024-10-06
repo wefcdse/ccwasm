@@ -20,7 +20,7 @@ public class Main {
                 .addFunction(hfs.all())
                 .addFunction(hfs.wasi())
                 .build();
-        io.push(IOValue.of("import time\ntime.time()"));
+        io.to_wasm_push(IOValue.of("import time\ntime.time()"));
 //        io.push(IOValue.of(32));
 //        io.push(IOValue.of(123123L));
 //        io.push(IOValue.of("from java 2"));
@@ -34,7 +34,7 @@ public class Main {
         ExportFunction a = instance.export("entry");
         a.apply();
 
-        System.out.println(io.pop().asString());
+        System.out.println(io.from_wasm_poll().asString());
 //        System.out.println(io.pop().asInt());
 //        System.out.println(io.pop().asLong());
 //        System.out.println(io.pop().asFloat());

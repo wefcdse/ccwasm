@@ -1,5 +1,7 @@
 package com.iung.ccwasm.wasm_api;
 
+import dan200.computercraft.api.lua.LuaValues;
+
 public class IOValue {
     public static final int I32 = 1;
     public static final int I64 = 2;
@@ -8,6 +10,7 @@ public class IOValue {
     public static final int F64 = 5;
     public static final int Type = 6;
     public static final int Table = 7;
+    public static final int Nil = 8;
 
     public int type;
     public Object data;

@@ -54,6 +54,8 @@ public class HostFuncs {
                 import_obj(),
                 export_obj(),
                 drop_obj(),
+                call_eval(), eval_ready(),
+                clear_eval(), import_from_eval()
         };
     }
 
@@ -69,7 +71,7 @@ public class HostFuncs {
 
     public HostFunction next_type() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            var first = ioHandler.to_wasm.peek();
+            var first = ioHandler.to_wasm_peek();
             if (first == null) {
                 return new Value[]{Value.i32(0)};
             }
@@ -79,7 +81,7 @@ public class HostFuncs {
 
     public HostFunction import_string_length() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            var first = ioHandler.to_wasm.peek();
+            var first = ioHandler.to_wasm_peek();
             var len = ((String) Objects.requireNonNull(first).data).getBytes().length;
             return new Value[]{Value.i32(len)};
         }, MOD_NAME, "import_string_length", List.of(), List.of(ValueType.I32));
@@ -88,7 +90,7 @@ public class HostFuncs {
     public HostFunction import_string_data() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             var addr = args[0].asInt();
-            var first = ioHandler.to_wasm.poll();
+            var first = ioHandler.to_wasm_poll();
             var mem = instance.memory();
             var string = ((String) Objects.requireNonNull(first).data).getBytes();
             mem.write(addr, string);
@@ -101,35 +103,35 @@ public class HostFuncs {
             var base_addr = args[0].asInt();
             var len = args[1].asInt();
             var str = instance.memory().readString(base_addr, len);
-            ioHandler.from_wasm.add(IOValue.of(str));
+            ioHandler.from_wasm_push(IOValue.of(str));
             return null;
         }, MOD_NAME, "export_string", List.of(ValueType.I32, ValueType.I32), List.of());
     }
 
     public HostFunction import_i32() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            int data = Objects.requireNonNull(ioHandler.to_wasm.poll()).asInt();
+            int data = Objects.requireNonNull(ioHandler.to_wasm_poll()).asInt();
             return new Value[]{Value.i32(data)};
         }, MOD_NAME, "import_i32", List.of(), List.of(ValueType.I32));
     }
 
     public HostFunction import_i64() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            long data = Objects.requireNonNull(ioHandler.to_wasm.poll()).asLong();
+            long data = Objects.requireNonNull(ioHandler.to_wasm_poll()).asLong();
             return new Value[]{Value.i64(data)};
         }, MOD_NAME, "import_i64", List.of(), List.of(ValueType.I64));
     }
 
     public HostFunction import_f32() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            float data = Objects.requireNonNull(ioHandler.to_wasm.poll()).asFloat();
+            float data = Objects.requireNonNull(ioHandler.to_wasm_poll()).asFloat();
             return new Value[]{Value.fromFloat(data)};
         }, MOD_NAME, "import_f32", List.of(), List.of(ValueType.F32));
     }
 
     public HostFunction import_f64() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            double data = Objects.requireNonNull(ioHandler.to_wasm.poll()).asDouble();
+            double data = Objects.requireNonNull(ioHandler.to_wasm_poll()).asDouble();
             return new Value[]{Value.fromDouble(data)};
         }, MOD_NAME, "import_f64", List.of(), List.of(ValueType.F64));
     }
@@ -137,7 +139,7 @@ public class HostFuncs {
     public HostFunction export_i32() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             int value = args[0].asInt();
-            ioHandler.from_wasm.add(IOValue.of(value));
+            ioHandler.from_wasm_push(IOValue.of(value));
             return null;
         }, MOD_NAME, "export_i32", List.of(ValueType.I32), List.of());
     }
@@ -145,7 +147,7 @@ public class HostFuncs {
     public HostFunction export_i64() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             long value = args[0].asLong();
-            ioHandler.from_wasm.add(IOValue.of(value));
+            ioHandler.from_wasm_push(IOValue.of(value));
             return null;
         }, MOD_NAME, "export_i64", List.of(ValueType.I64), List.of());
     }
@@ -153,7 +155,7 @@ public class HostFuncs {
     public HostFunction export_f32() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             float value = args[0].asFloat();
-            ioHandler.from_wasm.add(IOValue.of(value));
+            ioHandler.from_wasm_push(IOValue.of(value));
             return null;
         }, MOD_NAME, "export_f32", List.of(ValueType.F32), List.of());
     }
@@ -161,14 +163,14 @@ public class HostFuncs {
     public HostFunction export_f64() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             double value = args[0].asDouble();
-            ioHandler.from_wasm.add(IOValue.of(value));
+            ioHandler.from_wasm_push(IOValue.of(value));
             return null;
         }, MOD_NAME, "export_f64", List.of(ValueType.F64), List.of());
     }
 
     public HostFunction abort_next_import() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-            ioHandler.to_wasm.poll();
+            ioHandler.to_wasm_poll();
             return null;
         }, MOD_NAME, "abort_next_import", List.of(), List.of());
     }
@@ -191,7 +193,7 @@ public class HostFuncs {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             int key = 0;
             try {
-                IOValue obj = ioHandler.to_wasm.poll();
+                IOValue obj = ioHandler.to_wasm_poll();
 //                Ccwasm.LOGGER.info("{}", obj);
 
                 key = ioHandler.obj_hold.put(Objects.requireNonNull(obj).data);
@@ -206,7 +208,7 @@ public class HostFuncs {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             int key = args[0].asInt();
             var obj = ioHandler.obj_hold.get(key);
-            ioHandler.from_wasm.add(IOValue.of_obj(obj));
+            ioHandler.from_wasm_push(IOValue.of_obj(obj));
             return null;
         }, MOD_NAME, "export_obj", List.of(ValueType.I32), List.of());
     }
@@ -217,5 +219,38 @@ public class HostFuncs {
             ioHandler.obj_hold.drop(key);
             return null;
         }, MOD_NAME, "drop_obj", List.of(ValueType.I32), List.of());
+    }
+
+    public HostFunction call_eval() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            if (!this.ioHandler.eval_valid()) {
+                return new Value[]{Value.i32(0)};
+            }
+            var base_addr = args[0].asInt();
+            var len = args[1].asInt();
+            var str = instance.memory().readString(base_addr, len);
+            ioHandler.setTo_eval(str);
+            return new Value[]{Value.i32(1)};
+        }, MOD_NAME, "call_eval", List.of(ValueType.I32, ValueType.I32), List.of(ValueType.I32));
+    }
+
+    public HostFunction eval_ready() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            return new Value[]{Value.i32(this.ioHandler.eval_ready() ? 1 : 0)};
+        }, MOD_NAME, "eval_ready", List.of(), List.of(ValueType.I32));
+    }
+
+    public HostFunction clear_eval() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            ioHandler.clear_eval();
+            return null;
+        }, MOD_NAME, "clear_eval", List.of(), List.of());
+    }
+
+    public HostFunction import_from_eval() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            ioHandler.import_from_eval();
+            return null;
+        }, MOD_NAME, "import_from_eval", List.of(), List.of());
     }
 }

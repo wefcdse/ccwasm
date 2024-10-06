@@ -1,0 +1,9 @@
+[package]
+name = "wasmipython"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.89"
+wasmi = "0.37.1"
+wasmer-wasi = "*"

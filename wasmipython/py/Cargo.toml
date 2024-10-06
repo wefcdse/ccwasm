@@ -1,0 +1,15 @@
+[package]
+name = "py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+# cc_wasm_api = "0.2.2"
+rustpython-vm = { version = "0.4.0", default-features = false, features = [
+    "compiler",
+] }
+[profile.release]
+opt-level = 1
+lto = false

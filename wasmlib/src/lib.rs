@@ -1,64 +1,44 @@
+use std::future::Future;
+use std::marker::{PhantomData, PhantomPinned};
+use std::task::Poll;
+use std::time::Duration;
+
+use cc_wasm_api::coroutine::{sleep, spawn, yield_now, UnsyncChannel};
+use cc_wasm_api::eval::{eval, yield_lua};
 use cc_wasm_api::export_funcs;
-use cc_wasm_api::lua_api::LuaResult;
-use cc_wasm_api::utils::Debuged;
-use rustpython_vm::compiler::Mode;
-use rustpython_vm::scope::Scope;
-use rustpython_vm::Interpreter;
+use cc_wasm_api::lua_api::{Exportable, Importable, LuaResult};
+use cc_wasm_api::utils::{Debuged, Number, SyncNonSync};
 
-export_funcs!((eval_, eval), (init_, init), (exec_, exec));
+export_funcs!((aa, init), (b, bb));
+static C: SyncNonSync<UnsyncChannel<String>> = SyncNonSync(UnsyncChannel::new(10));
 
-thread_local! {
-    static I : Interpreter = Interpreter::without_stdlib(Default::default());
-    static S:Scope = {
-        I.with(|i|i.enter(|vm|vm.new_scope_with_builtins()))
-    };
-    static Str : String = String::new();
-
+fn b(a: Option<Number>, b: Option<Number>) -> String {
+    format!("{:?},{:?}", a, b)
 }
 
-fn eval_(pystr: Option<String>) -> LuaResult<Option<String>> {
-    // let pystr = String::import().unwrap();
-    let res = I.with(|e| {
-        S.with(|s| {
-            e.enter(|vm| {
-                if pystr.is_none() {
-                    return Ok(None);
-                }
-                let source = pystr.as_deref().unwrap_or("pass");
-                let code_obj = vm.compile(source, Mode::BlockExpr, "<embedded>".to_owned())?;
-
-                let a = vm.run_code_obj(code_obj, s.to_owned()).debuged()?;
-
-                let scope = vm.new_scope_with_builtins();
-                scope.locals.set_item("a", a, vm).debuged()?;
-                let a = vm.run_block_expr(scope, "str(a)").debuged()?;
-
-                Ok(Some(format!("{}", a.str(vm).debuged()?)))
-            })
-        })
+fn aa() {
+    spawn(async {
+        loop {
+            let a: Number = eval("return redstone.getAnalogInput(\"left\")")
+                .await
+                .unwrap();
+            let () = eval(&format!("redstone.setAnalogOutput(\"right\",{})", a))
+                .await
+                .unwrap();
+            let l: LuaResult<Option<(Number, Number, Number)>> = eval("return gps.locate()").await;
+            let () = eval(&format!("print(\"{:?}\")", l)).await.unwrap();
+            yield_now().await;
+        }
     });
-    res
-}
-fn exec_(pystr: Option<String>) -> LuaResult<()> {
-    // let pystr = String::import().unwrap();
-    let res = I.with(|e| {
-        S.with(|s| {
-            e.enter(|vm| {
-                if pystr.is_none() {
-                    return Ok(());
-                }
-                let source = pystr.as_deref().unwrap_or("pass");
-                let code_obj = vm.compile(source, Mode::Exec, "<embedded>".to_owned())?;
-
-                vm.run_code_obj(code_obj, s.to_owned()).debuged()?;
-
-                Ok(())
-            })
-        })
+    spawn(async {
+        loop {
+            sleep(Duration::from_secs(1)).await;
+            yield_lua().await;
+        }
     });
-    res
-}
-fn init_() -> LuaResult<()> {
-    S.with(|_| {});
-    Ok(())
+
+    // spawn(async {
+    //     let a: String = async_eval("return \"32e1e212\"").await.unwrap();
+    //     C.insert(a).await;
+    // });
 }
