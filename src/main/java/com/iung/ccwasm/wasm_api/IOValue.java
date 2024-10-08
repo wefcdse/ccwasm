@@ -11,6 +11,7 @@ public class IOValue {
     public static final int Type = 6;
     public static final int Table = 7;
     public static final int Nil = 8;
+    public static final int Bool = 9;
 
     public int type;
     public Object data;
@@ -85,6 +86,10 @@ public class IOValue {
         if (data instanceof String) {
             return IOValue.of((String) data);
         }
+        if (data instanceof Boolean) {
+            return new IOValue(Bool, data);
+        }
+
         return new IOValue(Table, data);
     }
 

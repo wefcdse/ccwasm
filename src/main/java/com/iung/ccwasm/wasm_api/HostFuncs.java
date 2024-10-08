@@ -55,7 +55,9 @@ public class HostFuncs {
                 export_obj(),
                 drop_obj(),
                 call_eval(), eval_ready(),
-                clear_eval(), import_from_eval()
+                clear_eval(), import_from_eval(),
+                import_bool(), export_bool(),
+                export_nil()
         };
     }
 
@@ -252,5 +254,27 @@ public class HostFuncs {
             ioHandler.import_from_eval();
             return null;
         }, MOD_NAME, "import_from_eval", List.of(), List.of());
+    }
+
+    public HostFunction import_bool() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            boolean data = (boolean) Objects.requireNonNull(ioHandler.to_wasm_poll()).data;
+            return new Value[]{Value.i32(data ? 1 : 0)};
+        }, MOD_NAME, "import_bool", List.of(), List.of(ValueType.I32));
+    }
+
+    public HostFunction export_bool() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            int value = args[0].asInt();
+            ioHandler.from_wasm_push(new IOValue(IOValue.Bool, value != 0));
+            return null;
+        }, MOD_NAME, "export_bool", List.of(ValueType.I32), List.of());
+    }
+
+    public HostFunction export_nil() {
+        return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+            ioHandler.from_wasm_push(new IOValue(IOValue.Nil, null));
+            return null;
+        }, MOD_NAME, "export_nil", List.of(), List.of());
     }
 }
