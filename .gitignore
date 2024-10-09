@@ -39,3 +39,8 @@ replay_*.log
 *.hprof
 *.jfr
 a.wasm
+
+wasmipython/target
+examples/*/target
+examples/*/.vscode
+examples/*/.vscode

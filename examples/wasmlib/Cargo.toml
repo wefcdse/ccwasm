@@ -1,0 +1,30 @@
+[package]
+name = "wasmlib"
+version = "0.1.0"
+edition = "2021"
+
+
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+# rustpython-vm = { version = "0.4.0", default-features = false, features = [
+#     "compiler",
+#     # "freeze-stdlib",
+# ] }
+cc_wasm_api = { path = "../../cc_wasm_api", default-features = false, features = [
+    "coroutine",
+    "eval",
+] }
+# rustpython = { version = "0.4.0", default-features = false, features = [
+#     # "stdlib",
+#     # "freeze-stdlib",
+# ] }
+[profile.dev]
+opt-level = 3
+# lto = true
+[profile.release]
+opt-level = 3
+lto = true
+panic = "unwind"
+# [target.wasm32-wasi]
+# rustflags = ["-C", "panic=unwind"]

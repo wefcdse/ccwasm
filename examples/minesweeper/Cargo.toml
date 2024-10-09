@@ -1,0 +1,13 @@
+[package]
+name = "minesweeper"
+version = "0.1.0"
+edition = "2021"
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, features = [
+    "coroutine",
+    "eval",
+] }
+rand = "*"
+stupid_utils = "*"

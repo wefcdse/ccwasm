@@ -26,12 +26,14 @@ public class SlotMap<T> {
     }
 
     public int put(T data) {
-        while (true) {
-            int key = rand.nextInt();
-            if (!map.containsKey(key) && key != 0) {
-                map.put(key, data);
-                return key;
-            }
-        }
+        return 0;
+//        while (true) {
+//
+//            int key = rand.nextInt();
+//            if (!map.containsKey(key) && key != 0) {
+//                map.put(key, data);
+//                return key;
+//            }
+//        }
     }
 }
