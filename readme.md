@@ -18,6 +18,16 @@ use this [crate](https://crates.io/crates/cc_wasm_api)
 see the example [here](https://github.com/wefcdse/ccwasm/tree/master/wasmlib)
 
 # Example
+[minesweeper example](https://github.com/wefcdse/ccwasm/tree/master/examples)
+
+[wasm file](https://github.com/wefcdse/ccwasm/blob/master/example_wasm/minesweeper.wasm),
+
+- download this file and put it in `./wasm/`
+
+- place a monitor on top of a computer
+
+- in computer craft's shell run `exec_wasm_auto_reload minesweeper`
+
 there is [a python interpreter example](https://github.com/wefcdse/ccwasm/blob/master/example_wasm/python.wasm), 
 download this file and put it in `./wasm/`, and then in computer craft lua run:
 ```lua
