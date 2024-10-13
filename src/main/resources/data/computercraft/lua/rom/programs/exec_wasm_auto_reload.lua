@@ -4,13 +4,15 @@ Side = Args[2]
 if Side == nil then
     Side = "front"
 end
-
+if Side ~= "front" and Side ~= "back" and Side ~= "left" and Side ~= "right" and Side ~= "top" and Side ~= "bottom" then
+    Side = "front"
+end
 Edge = Args[3]
 if Edge == nil then
     Edge = "posedge"
 end
 if Edge ~= "posedge" and Edge ~= "negedge" and Edge ~= "posneg" then
-    error("error edge type, should be posedge/negedge/posneg")
+    Edge = "posedge"
 end
 
 -- print(Wasm_name)
@@ -18,7 +20,13 @@ end
 
 _G.global = _G
 _G.wasm_mod = wasm.load_wasm(Wasm_name)
-_G.args = Args
+
+_G.args = {}
+for index, value in ipairs(Args) do
+    if index > 3 then
+        args[index - 3] = value
+    end
+end
 wasm_mod.init()
 
 

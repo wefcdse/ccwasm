@@ -1,28 +1,24 @@
-use cc_wasm_api::prelude::*;
-use functions::{init_monitor, poll_evt};
-use local_monitor::LocalMonitor;
+use cc_wasm_api::{
+    addon::{
+        local_monitor::LocalMonitor,
+        misc::{ColorId, Side},
+    },
+    prelude::*,
+};
+use functions::poll_evt;
 use ms::{game_logic, GameState};
-use simple_cell::{SimpleCell, Syncer};
-use utils::{AsIfPixel, ColorId};
 
 mod functions;
-mod local_monitor;
 mod ms;
-mod simple_cell;
-mod utils;
-mod vec2d;
 
 export_funcs!(init);
 static CLICKED: SyncNonSync<UnsyncChannel<(i32, i32)>> = SyncNonSync(UnsyncChannel::new(0));
-static MONITOR: SyncNonSync<SimpleCell<LocalMonitor>> = SyncNonSync(SimpleCell::new());
-static B: SyncNonSync<Syncer> = SyncNonSync(Syncer::new());
+static MONITOR: SyncNonSync<AsyncLock<LocalMonitor>> =
+    SyncNonSync(AsyncLock::new(LocalMonitor::new_empty(SIDE)));
+// static B: SyncNonSync<Syncer> = SyncNonSync(Syncer::new());
+const SIDE: Side = Side::Top;
 
 fn init() {
-    MONITOR.init(LocalMonitor::new(
-        0,
-        0,
-        AsIfPixel::new(' ', ColorId::Blue, ColorId::Orange).unwrap(),
-    ));
     async {
         loop {
             poll_evt().await;
@@ -37,17 +33,10 @@ fn init() {
 
     async {
         let mut ts = TickSyncer::new();
-        init_monitor().await;
-        let size: (Number, Number) = eval("return monitor.getSize()").await.unwrap();
-        MONITOR.get().resize(
-            size.0.to_i32() as usize,
-            size.1.to_i32() as usize,
-            AsIfPixel::new(' ', ColorId::Blue, ColorId::Orange).unwrap(),
-        );
-        MONITOR.get().sync_all().await;
+        MONITOR.lock().await.init().await.unwrap();
+        MONITOR.lock().await.clear(ColorId::White).await.unwrap();
         loop {
-            B.wait(1).await;
-            MONITOR.get().sync().await;
+            MONITOR.lock().await.sync().await.unwrap();
             ts.sync().await;
         }
     }
@@ -64,7 +53,6 @@ fn init() {
             //     .unwrap();
             //     MONITOR.get().write(1, MONITOR.get().y() - i, p);
             // }
-            B.notify();
             ts.sync().await;
         }
     }
@@ -81,8 +69,7 @@ async fn main_logic() {
         //     let p = AsIfPixel::new(' ', ColorId::Black, ColorId::Black).unwrap();
         //     MONITOR.get().write(x as usize, y as usize, p);
         // }
-        game_logic(&mut gs, MONITOR.get()).await;
-        B.notify();
+        game_logic(&mut gs, &mut *MONITOR.lock().await).await;
         ts.sync().await;
     }
 }

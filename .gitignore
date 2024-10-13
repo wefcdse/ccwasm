@@ -44,3 +44,4 @@ wasmipython/target
 examples/*/target
 examples/*/.vscode
 examples/*/.vscode
+*.ttf

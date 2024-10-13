@@ -2,9 +2,16 @@ Args = { ... }
 wasm_name = Args[1]
 -- print(wasm_name)
 
+_G.args = {}
+for index, value in ipairs(Args) do
+    if index > 1 then
+        args[index - 1] = value
+    end
+end
+
+
 _G.global = _G
 _G.wasm_mod = wasm.load_wasm(wasm_name)
-_G.args = Args
 wasm_mod.init()
 
 while true do

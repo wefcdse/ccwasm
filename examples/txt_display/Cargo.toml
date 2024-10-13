@@ -1,0 +1,16 @@
+[package]
+name = "txt_display"
+version = "0.1.0"
+edition = "2021"
+[lib]
+crate-type = ["cdylib"]
+[dependencies]
+cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, features = [
+    "coroutine",
+    "eval",
+    "addon",
+] }
+rand = "*"
+stupid_utils = "*"
+rusttype = "0.9.3"
+base64 = "0.22.1"

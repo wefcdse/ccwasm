@@ -3,7 +3,14 @@ use std::{
     collections::{HashSet, VecDeque},
 };
 
-use cc_wasm_api::utils::SyncNonSync;
+use cc_wasm_api::{
+    addon::{
+        local_monitor::LocalMonitor,
+        misc::{AsIfPixel, ColorId, Direction},
+        vec2d::Vec2d,
+    },
+    utils::SyncNonSync,
+};
 /// run with `cargo run --example minesweeper`
 ///
 /// in minecraft:
@@ -12,12 +19,7 @@ use cc_wasm_api::utils::SyncNonSync;
 use rand::random;
 use stupid_utils::{prelude::MutableInit, select::DotSelect};
 
-use crate::{
-    local_monitor::LocalMonitor,
-    utils::{AsIfPixel, ColorId, Direction},
-    vec2d::Vec2d,
-    CLICKED,
-};
+use crate::CLICKED;
 
 const CLEAR_COLOR: ColorId = ColorId::White;
 const TEXT_COLOR: ColorId = ColorId::Yellow;
@@ -113,7 +115,7 @@ pub async fn game_logic(game: &mut GameState, monitor: &mut LocalMonitor) {
                     let (size_x, size_y) = monitor.size();
                     let starty = size_y / 2 + 1;
                     let startx = (size_x.max(5) - 5) / 2 + 1;
-                    monitor.clear_with(CLEAR_COLOR);
+                    monitor.clear_local(CLEAR_COLOR);
                     monitor.write_str(
                         startx,
                         starty,
@@ -171,7 +173,7 @@ pub async fn game_logic(game: &mut GameState, monitor: &mut LocalMonitor) {
                             MINE_CHANCE.set((old + (old / 4).max(1)).max(2));
                         }
                     } else {
-                        monitor.clear_with(CLEAR_COLOR);
+                        monitor.clear_local(CLEAR_COLOR);
 
                         for x in 1..=monitor.x() {
                             monitor.write(x, 1, AsIfPixel::colored_whitespace(BORDER_COLOR));
