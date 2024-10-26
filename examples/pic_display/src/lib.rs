@@ -2,14 +2,12 @@ use std::io::Cursor;
 
 use cc_wasm_api::{
     addon::{
-        arg,
         local_monitor::LocalMonitor,
         misc::{AsIfPixel, ColorId, Side},
     },
     export_funcs,
     prelude::{CoroutineSpawn, TickSyncer},
     throw, throw_exec,
-    utils::Number,
 };
 use image::{imageops::FilterType, ImageReader};
 use pic_process::{gen_map, nearest};
@@ -19,8 +17,8 @@ fn init() {
     TickSyncer::spawn_handle_coroutine();
     async {
         let mut ts = TickSyncer::new();
-        
-        let (a, b, c): (Number, Number, Number) = throw!(arg::get_args().await);
+
+        // let (a, b, c): (Number, Number, Number) = throw!(arg::get_args().await);
         let mut m = throw!(LocalMonitor::new_inited(Side::Top).await);
         ts.sync().await;
 

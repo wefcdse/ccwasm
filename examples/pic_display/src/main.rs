@@ -1,11 +1,10 @@
 use ::pic_display::pic_process::{gen_map, nearest};
 use image::{imageops::FilterType, ImageReader};
-use palette::{rgb::Rgb, FromColor, GetHue, Hsv};
 use std::io::Cursor;
 
 // use base64::{engine::general_purpose::STANDARD, Engine as _};
 fn main() {
-    let img = ImageReader::new(Cursor::new(include_bytes!("../13.jpg")))
+    let img = ImageReader::new(Cursor::new(include_bytes!("../pics/13.jpg")))
         .with_guessed_format()
         .unwrap()
         .decode()
@@ -27,9 +26,9 @@ fn main() {
     img.save("out.png").unwrap();
 }
 
-#[test]
-fn a() {
-    let rgb: Rgb = Rgb::from([0., 0., 0.5]);
-    let hsv: Hsv = Hsv::from_color(rgb);
-    dbg!(hsv.get_hue().into_inner());
-}
+// #[test]
+// fn a() {
+//     let rgb: Rgb = Rgb::from([0., 0., 0.5]);
+//     let hsv: Hsv = Hsv::from_color(rgb);
+//     dbg!(hsv.get_hue().into_inner());
+// }
