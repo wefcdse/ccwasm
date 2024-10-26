@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    time::Instant,
+};
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use cc_wasm_api::{
@@ -6,52 +9,94 @@ use cc_wasm_api::{
         local_monitor::LocalMonitor,
         misc::{AsIfPixel, ColorId, Side},
     },
+    debug::show_str,
     eval::{eval, exec},
     export_funcs,
     prelude::{CoroutineSpawn, TickSyncer},
+    throw, throw_eval, throw_exec,
     utils::Number,
 };
 use rusttype::{Font, Point, Scale};
-use stupid_utils::{disable, select::DotSelect};
+use stupid_utils::{disable, prelude::MutableInit, select::DotSelect};
+const SIDE: Side = Side::Top;
 
 export_funcs!(init);
 fn init() {
     TickSyncer::spawn_handle_coroutine();
     async {
-        let mut last_rs = false;
         let mut ts = TickSyncer::new();
-        let mut m = LocalMonitor::new_inited(Side::Top).await.unwrap();
+        // let mut m = LocalMonitor::new_inited(Side::Top).await.unwrap();
 
-        exec("print(\"hell world\")").await.unwrap();
-        exec(&format!("print(\"{}, {}\")", m.x(), m.y()))
-            .await
-            .unwrap();
+        throw_exec!("print(\"hell world\")");
+        // throw_exec!(&format!("print(\"{}, {}\")", m.x(), m.y()));
 
-        let txt: String = eval("return global.args[1]").await.unwrap();
-        let txt = String::from_utf8(STANDARD.decode(txt).unwrap()).unwrap();
+        let txt = {
+            // let txt = txt
+            //     .map(|txt| String::from_utf8(STANDARD.decode(txt).unwrap()).unwrap())
+            //     .unwrap_or(include_str!("txt.txt").to_owned());
+            // txt
+            match throw_eval!(Option<String>, "return global.args[1]") {
+                Some(s) => throw!(String::from_utf8(throw!(STANDARD.decode(s)))),
+                None => include_str!("txt.txt").to_owned(),
+            }
+        };
         // let txt = include_str!("txt.txt");
-        let start_x = eval::<Option<String>>("return global.args[3]")
-            .await
-            .unwrap()
-            .map(|s| Number::Float(s.parse::<f64>().unwrap()))
-            .unwrap_or(Number::Int(0));
-        let len_x = eval::<Option<String>>("return global.args[2]")
-            .await
-            .unwrap()
-            .map(|s| Number::Float(s.parse::<f64>().unwrap()))
-            .unwrap_or(Number::Int(m.x() as i64));
+        let (mut monitors, len_x) = {
+            let monitor_names = throw_eval!(Vec<String>, "return unpack(global.args)")
+                .mutable_init(|v| {
+                    if !v.is_empty() {
+                        v.remove(0);
+                    }
+                });
+
+            let mut monitors = Vec::new();
+            for name in monitor_names {
+                monitors.push(throw!(LocalMonitor::new_inited((SIDE, &name)).await));
+            }
+            if monitors.is_empty() {
+                throw!("at least 1 monitor");
+            }
+
+            {
+                let w = monitors[0].y();
+                for m in &monitors {
+                    if w != m.y() {
+                        throw!("monitors must be has same y");
+                    }
+                }
+            }
+            let mut s = 0;
+            (
+                monitors
+                    .into_iter()
+                    .map(|m| {
+                        let o = (m, s);
+                        s += o.0.x();
+                        o
+                    })
+                    .collect::<Vec<_>>(),
+                Number::Int(s as i64),
+            )
+        };
+
+        // let start_x = throw_eval!(Option<String>, "return global.args[3]")
+        //     .map(|s| Number::Float(s.parse::<f64>().unwrap()))
+        //     .unwrap_or(Number::Int(0));
+        // let len_x = throw_eval!(Option<String>, "return global.args[2]")
+        //     .map(|s| Number::Float(s.parse::<f64>().unwrap()))
+        //     .unwrap_or(Number::Int(m.x() as i64));
 
         // let start_x = Number::Int(82);
         // let len_x = Number::Int(82 * 2);
 
         // let font_data: &[u8] = include_bytes!("fonts/CALIBRI.ttf");
-        let font_data: &[u8] = include_bytes!("fonts/江城知音体 600W");
         // let font_data: &[u8] = include_bytes!("fonts/STXINGKA.TTF");
+        let font_data: &[u8] = include_bytes!("fonts/江城知音体 600W");
         // let font_data: &[u8] = include_bytes!("fonts/SIMYOU.TTF");
         let font = Font::try_from_bytes(font_data).unwrap();
 
-        let font_x = from_y_to_x(m.y());
-        let font_y = m.y();
+        let font_x = from_y_to_x(monitors[0].0.y());
+        let font_y = monitors[0].0.y();
 
         let draw_cache = buffed_draw(&txt, &font, font_x, font_y);
         disable!(font);
@@ -60,8 +105,12 @@ fn init() {
 
         let mut basic_offs: i32 = base_offs_init;
         loop {
+            let start = Instant::now();
             // m.clear(ColorId::Black).await.unwrap();
-            m.clear_local(ColorId::Black);
+            monitors.iter_mut().for_each(|(m, _offs)| {
+                m.clear_local(ColorId::Black);
+            });
+
             // let now = Instant::now();
             let mut offset_x: i32 = basic_offs;
             let mut valid = false;
@@ -73,7 +122,7 @@ fn init() {
                 // exec(&format!("print(\"{}, {}\")", m.x(), m.y()))
                 //     .await
                 //     .unwrap();
-                if offset_x - start_x.to_i32() > m.x().try_into().unwrap() {
+                if offset_x > len_x.to_i32() {
                     valid = true;
                     break;
                 }
@@ -83,11 +132,13 @@ fn init() {
                 }
 
                 draw.pic.iter().for_each(|(x, y, v)| {
-                    let x = offset_x - start_x.to_i32() + *x as i32;
-                    let y = *y as i32;
-                    if x >= 0 {
-                        let color = v.select(ColorId::Purple, ColorId::Black);
-                        m.write(x as usize, y as usize, AsIfPixel::colored_whitespace(color));
+                    for (m, offs) in monitors.iter_mut() {
+                        let x = offset_x - *offs as i32 + *x as i32;
+                        let y = *y as i32;
+                        if x >= 0 {
+                            let color = v.select(ColorId::Purple, ColorId::Black);
+                            m.write(x as usize, y as usize, AsIfPixel::colored_whitespace(color));
+                        }
                     }
                 });
                 offset_x += draw.width + from_y_to_x_offs(font_y);
@@ -107,8 +158,45 @@ fn init() {
             if !valid {
                 basic_offs = base_offs_init;
             }
-            // ts.sleep(Duration::from_secs_f32(0.005)).await;
-            m.sync().await.unwrap();
+            show_str(&format!(
+                "draw time: {}ms",
+                start.elapsed().as_secs_f32() * 1000.
+            ));
+
+            if true {
+                // ts.sleep(Duration::from_secs_f32(0.005)).await;
+                let start = Instant::now();
+                let (script, code_line) = {
+                    let mut so = String::new();
+                    let mut co = 0;
+                    for (m, _) in monitors.iter_mut() {
+                        let (s, c) = unsafe { m.sync_clear_script(ColorId::Black) };
+                        so += &s;
+                        co += c;
+                    }
+                    (so, co)
+                };
+                show_str(&format!(
+                    "cacl time: {}ms",
+                    start.elapsed().as_secs_f32() * 1000.
+                ));
+
+                let start = Instant::now();
+                // show_str(&script);
+
+                throw_exec!(&script);
+                show_str(&format!(
+                    "exec time: {}ms",
+                    start.elapsed().as_secs_f32() * 1000.
+                ));
+
+                show_str(&format!("code line: {}", code_line));
+            }
+            // for (m, _) in monitors.iter_mut() {
+            //     // throw!(m.sync().await);
+            //     throw!(m.sync_clear(ColorId::Black).await);
+            // }
+
             ts.sync().await;
             // m.sync_limited_rate(0.4).await.unwrap();
             // ts.sync().await;

@@ -1,14 +1,15 @@
 package com.iung.ccwasm;
 
-import com.dylibso.chicory.runtime.ExportFunction;
-import com.dylibso.chicory.runtime.HostImports;
-import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.*;
 import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import com.iung.ccwasm.wasm_api.HostFuncs;
 import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
 
 import java.io.File;
+import java.util.List;
 
 public class Main {
     public static void main(String[] _args) {
@@ -17,7 +18,6 @@ public class Main {
 
         HostImports hi = HostImports.builder()
 //                .addFunction(HostFunc.show_str())
-                .addFunction(hfs.all())
                 .addFunction(hfs.wasi())
                 .build();
         io.to_wasm_push(IOValue.of("import time\ntime.time()"));
@@ -31,10 +31,22 @@ public class Main {
 
         Module module = Module.builder(new File("./a.wasm")).withHostImports(hi).build();
         Instance instance = module.instantiate();
-        ExportFunction a = instance.export("entry");
+        ExportFunction a = instance.export("call");
         a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
+        a.apply();
+        System.out.println( a.apply()[0].asInt());
 
-        System.out.println(io.from_wasm_poll().asString());
 //        System.out.println(io.pop().asInt());
 //        System.out.println(io.pop().asLong());
 //        System.out.println(io.pop().asFloat());

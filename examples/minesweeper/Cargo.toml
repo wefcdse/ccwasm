@@ -7,7 +7,9 @@ crate-type = ["cdylib"]
 [dependencies]
 cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, features = [
     "coroutine",
-    "eval","addon"
+    "eval",
+    "addon",
+    "debug",
 ] }
 rand = "*"
 stupid_utils = "*"

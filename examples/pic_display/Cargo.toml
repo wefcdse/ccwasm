@@ -1,0 +1,17 @@
+[package]
+name = "pic_display"
+version = "0.1.0"
+edition = "2021"
+[lib]
+crate-type = ["cdylib", "lib"]
+[dependencies]
+cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, features = [
+    "coroutine",
+    "eval",
+    "addon",
+    "debug",
+] }
+image = "0.25.4"
+palette = "0.7.6"
+[profile.dev]
+opt-level = 3

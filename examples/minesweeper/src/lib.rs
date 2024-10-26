@@ -1,8 +1,5 @@
 use cc_wasm_api::{
-    addon::{
-        local_monitor::LocalMonitor,
-        misc::{ColorId, Side},
-    },
+    addon::{local_monitor::LocalMonitor, misc::Side},
     prelude::*,
 };
 use functions::poll_evt;
@@ -14,7 +11,7 @@ mod ms;
 export_funcs!(init);
 static CLICKED: SyncNonSync<UnsyncChannel<(i32, i32)>> = SyncNonSync(UnsyncChannel::new(0));
 static MONITOR: SyncNonSync<AsyncLock<LocalMonitor>> =
-    SyncNonSync(AsyncLock::new(LocalMonitor::new_empty(SIDE)));
+    SyncNonSync(AsyncLock::new(LocalMonitor::new_empty()));
 // static B: SyncNonSync<Syncer> = SyncNonSync(Syncer::new());
 const SIDE: Side = Side::Top;
 
@@ -33,8 +30,8 @@ fn init() {
 
     async {
         let mut ts = TickSyncer::new();
-        MONITOR.lock().await.init().await.unwrap();
-        MONITOR.lock().await.clear(ColorId::White).await.unwrap();
+        MONITOR.lock().await.init(SIDE).await.unwrap();
+        // MONITOR.lock().await.clear(ColorId::White).await.unwrap();
         loop {
             MONITOR.lock().await.sync().await.unwrap();
             ts.sync().await;

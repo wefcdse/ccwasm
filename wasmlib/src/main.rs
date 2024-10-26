@@ -1,34 +1,20 @@
-use std::{
-    any::{self, Any},
-    borrow::Cow,
-    hint::{black_box, unreachable_unchecked},
-    mem::forget,
-    panic::{self, catch_unwind, PanicInfo},
-};
+use std::{hint::black_box, time::Instant};
+
+#[no_mangle]
+pub extern "C" fn call() -> i32 {
+    (b(1000000) * 1000.) as i32
+}
+fn b(c: usize) -> f64 {
+    let ts = Instant::now();
+    let mut num = black_box((black_box(32)));
+    for _ in 0..c {
+        num += black_box(1);
+    }
+    return ts.elapsed().as_secs_f64() * 1000_000_000. / c as f64;
+}
 
 fn main() {
-    unsafe { unreachable_unchecked() };
-    panic::set_hook(Box::new(|info| {
-        dbg!(info.payload().type_id());
-    }));
-
-    let a = || {
-        panic!("aa{}a", black_box(32));
-    };
-    dbg!(a.type_id());
-    let r: Box<dyn Any + Send> = catch_unwind(a).unwrap_err();
-    // drop(r);
-    dbg!(r.type_id());
-    dbg!(r.is::<&'static str>());
-    dbg!(r.downcast_ref::<&'static str>());
-    dbg!(r.downcast_ref::<String>());
-    // dbg!(r.downcast_ref::<String>());
-    // dbg!(any::TypeId::of::<String>());
-    // dbg!(any::TypeId::of::<&'static str>());
-    // dbg!(any::TypeId::of::<Cow<'static, str>>());
-    // dbg!(any::TypeId::of::<()>());
-    // dbg!(any::TypeId::of::<str>());
-    // dbg!(any::TypeId::of::<PanicInfo>());
-    // forget(r);
-    println!("here");
+    dbg!(call());
+    // dbg!(b(10000000));
+    // println!("{:?}", 'a');
 }

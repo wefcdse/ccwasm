@@ -7,13 +7,16 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib"]
 [dependencies]
+anyhow = "*"
 # rustpython-vm = { version = "0.4.0", default-features = false, features = [
 #     "compiler",
 #     # "freeze-stdlib",
 # ] }
 cc_wasm_api = { path = "../../cc_wasm_api", default-features = false, features = [
     "coroutine",
-    "eval","addon"
+    "eval",
+    "addon",
+    "debug",
 ] }
 # rustpython = { version = "0.4.0", default-features = false, features = [
 #     # "stdlib",
