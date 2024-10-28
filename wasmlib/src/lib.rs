@@ -1,24 +1,12 @@
-use std::{
-    hint::black_box,
-    mem::transmute,
-    ops::AddAssign,
-    time::{Duration, Instant},
-};
+use cc_wasm_api::{addon::arg, debug::show_str, prelude::*};
 
-// export_funcs!(call);
-#[no_mangle]
-pub extern "C" fn call() -> f64 {
-    dbg!(2);
-    b(1_000_000_0)
-}
-fn b(c: usize) -> f64 {
-    let ts = Instant::now();
-    let mut num = black_box((black_box(32)));
-    for _ in 0..c {
-        num.add_assign(black_box(1));
+export_funcs!(init);
+
+fn init() {
+    async {
+        let args: Vec<u8> = arg::get_args().await.unwrap();
+        let a = String::from_utf8(args).unwrap();
+        show_str(&a);
     }
-    black_box(num);
-    let d = unsafe { transmute::<Instant, Duration>(ts) };
-    return ts.elapsed().as_secs_f64() * 1000_000_000. / c as f64;
-    return d.as_secs_f64();
+    .spawn();
 }

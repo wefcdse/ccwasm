@@ -3,6 +3,7 @@ use std::{collections::HashMap, ops::AddAssign};
 use image::{GenericImageView, Pixel, Rgb};
 use palette::{FromColor, GetHue, Hsv};
 const L: usize = 16;
+const MAX_EPOCH: usize = 300;
 
 pub fn nearest(map: [Rgb<u8>; L], pix: &Rgb<u8>) -> usize {
     let mut min_dist2 = i64::MAX;
@@ -44,7 +45,6 @@ pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
         m
     };
     let mut epochs = 0;
-    const MAX_EPOCH: usize = 200;
     let mut last_map = pix_map;
     loop {
         if epochs >= MAX_EPOCH {

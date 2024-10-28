@@ -1,5 +1,6 @@
 package com.iung.ccwasm.wasm_api;
 
+import com.iung.ccwasm.Ccwasm;
 import dan200.computercraft.api.lua.LuaValues;
 
 public class IOValue {
@@ -57,7 +58,9 @@ public class IOValue {
     public static IOValue of(String data) {
         return new IOValue(String, data);
     }
-
+    public static IOValue of(byte[] data) {
+        return new IOValue(String, data);
+    }
     public static IOValue of(float data) {
         return new IOValue(F32, data);
     }
@@ -71,6 +74,7 @@ public class IOValue {
     }
 
     public static IOValue of_obj(Object data) {
+//        Ccwasm.LOGGER.info("{}", data);
         if (data instanceof Integer) {
             return IOValue.of((int) data);
         }
@@ -85,6 +89,9 @@ public class IOValue {
         }
         if (data instanceof String) {
             return IOValue.of((String) data);
+        }
+        if (data instanceof byte[]) {
+            return IOValue.of((byte[]) data);
         }
         if (data instanceof Boolean) {
             return new IOValue(Bool, data);

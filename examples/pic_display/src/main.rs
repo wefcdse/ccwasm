@@ -4,14 +4,15 @@ use std::io::Cursor;
 
 // use base64::{engine::general_purpose::STANDARD, Engine as _};
 fn main() {
-    let img = ImageReader::new(Cursor::new(include_bytes!("../pics/13.jpg")))
+    let img = ImageReader::new(Cursor::new(include_bytes!("../pics/15.jpg")))
         .with_guessed_format()
         .unwrap()
         .decode()
         .unwrap();
     {
-        let img = img.resize(120, 120, FilterType::Lanczos3);
-        img.save("t.png").unwrap();
+        let size = 100;
+        let img = img.resize(size, size, FilterType::Lanczos3);
+        img.save("15.png").unwrap();
     }
     let img = img.resize(120, 80, FilterType::Lanczos3);
 

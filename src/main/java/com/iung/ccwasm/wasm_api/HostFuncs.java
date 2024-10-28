@@ -84,7 +84,7 @@ public class HostFuncs {
     public HostFunction import_string_length() {
         return new HostFunction((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             var first = ioHandler.to_wasm_peek();
-            var len = ((String) Objects.requireNonNull(first).data).getBytes().length;
+            var len = ((byte[]) Objects.requireNonNull(first).data).length;
             return new Value[]{Value.i32(len)};
         }, MOD_NAME, "import_string_length", List.of(), List.of(ValueType.I32));
     }
@@ -94,7 +94,7 @@ public class HostFuncs {
             var addr = args[0].asInt();
             var first = ioHandler.to_wasm_poll();
             var mem = instance.memory();
-            var string = ((String) Objects.requireNonNull(first).data).getBytes();
+            byte[] string = (byte[]) Objects.requireNonNull(first).data;
             mem.write(addr, string);
             return null;
         }, MOD_NAME, "import_string_data", List.of(ValueType.I32), List.of());

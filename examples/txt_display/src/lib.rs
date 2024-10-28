@@ -1,19 +1,16 @@
-use std::{
-    collections::{HashMap, HashSet},
-    time::Instant,
-};
+use std::collections::{HashMap, HashSet};
 
-use base64::{engine::general_purpose::STANDARD, Engine as _};
 use cc_wasm_api::{
     addon::{
         local_monitor::LocalMonitor,
         misc::{AsIfPixel, ColorId, Side},
     },
-    debug::show_str,
-    eval::{eval, exec},
+    // debug::show_str,
     export_funcs,
     prelude::{CoroutineSpawn, TickSyncer},
-    throw, throw_eval, throw_exec,
+    throw,
+    throw_eval,
+    throw_exec,
     utils::Number,
 };
 use rusttype::{Font, Point, Scale};
@@ -36,7 +33,7 @@ fn init() {
             //     .unwrap_or(include_str!("txt.txt").to_owned());
             // txt
             match throw_eval!(Option<String>, "return global.args[1]") {
-                Some(s) => throw!(String::from_utf8(throw!(STANDARD.decode(s)))),
+                Some(s) => s,
                 None => include_str!("txt.txt").to_owned(),
             }
         };
@@ -48,9 +45,12 @@ fn init() {
                         v.remove(0);
                     }
                 });
+            // show_str(&format!("{:?}", monitor_names));
 
             let mut monitors = Vec::new();
             for name in monitor_names {
+                // show_str(&name);
+                // continue;
                 monitors.push(throw!(LocalMonitor::new_inited((SIDE, &name)).await));
             }
             if monitors.is_empty() {
@@ -105,7 +105,7 @@ fn init() {
 
         let mut basic_offs: i32 = base_offs_init;
         loop {
-            let start = Instant::now();
+            // let start = Instant::now();
             // m.clear(ColorId::Black).await.unwrap();
             monitors.iter_mut().for_each(|(m, _offs)| {
                 m.clear_local(ColorId::Black);
@@ -158,15 +158,15 @@ fn init() {
             if !valid {
                 basic_offs = base_offs_init;
             }
-            show_str(&format!(
-                "draw time: {}ms",
-                start.elapsed().as_secs_f32() * 1000.
-            ));
+            // show_str(&format!(
+            //     "draw time: {}ms",
+            //     start.elapsed().as_secs_f32() * 1000.
+            // ));
 
             if true {
                 // ts.sleep(Duration::from_secs_f32(0.005)).await;
-                let start = Instant::now();
-                let (script, code_line) = {
+                // let start = Instant::now();
+                let (script, _code_line) = {
                     let mut so = String::new();
                     let mut co = 0;
                     for (m, _) in monitors.iter_mut() {
@@ -176,21 +176,21 @@ fn init() {
                     }
                     (so, co)
                 };
-                show_str(&format!(
-                    "cacl time: {}ms",
-                    start.elapsed().as_secs_f32() * 1000.
-                ));
+                // show_str(&format!(
+                //     "cacl time: {}ms",
+                //     start.elapsed().as_secs_f32() * 1000.
+                // ));
 
-                let start = Instant::now();
+                // let start = Instant::now();
                 // show_str(&script);
 
                 throw_exec!(&script);
-                show_str(&format!(
-                    "exec time: {}ms",
-                    start.elapsed().as_secs_f32() * 1000.
-                ));
+                // show_str(&format!(
+                //     "exec time: {}ms",
+                //     start.elapsed().as_secs_f32() * 1000.
+                // ));
 
-                show_str(&format!("code line: {}", code_line));
+                // show_str(&format!("code line: {}", code_line));
             }
             // for (m, _) in monitors.iter_mut() {
             //     // throw!(m.sync().await);
@@ -227,13 +227,13 @@ fn from_y_to_x(y: usize) -> usize {
 fn from_y_to_x_offs(y: usize) -> i32 {
     match y {
         _ => 2,
-        5 => 2,
-        12 => 2,
-        19 => 2,
-        26 => 2,
-        33 => 2,
-        40 => 2,
-        _ => panic!(),
+        // 5 => 2,
+        // 12 => 2,
+        // 19 => 2,
+        // 26 => 2,
+        // 33 => 2,
+        // 40 => 2,
+        // _ => panic!(),
     }
 }
 

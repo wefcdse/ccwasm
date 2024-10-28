@@ -8,6 +8,7 @@ import com.iung.ccwasm.wasm_api.IOValue;
 import dan200.computercraft.api.lua.*;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class WasmCtx implements IDynamicLuaObject {
@@ -47,6 +48,7 @@ public class WasmCtx implements IDynamicLuaObject {
     public MethodResult callMethod(ILuaContext context, int method, IArguments arguments) throws LuaException {
 //        Ccwasm.LOGGER.info("wasm ctx: Slots {}", ioHandler.obj_hold.count());
 //        Ccwasm.LOGGER.info(arguments.getType(0));
+
         try {
             var func = methods[method];
             if (func.equals("eval_result")) {
@@ -55,6 +57,11 @@ public class WasmCtx implements IDynamicLuaObject {
 //                    Ccwasm.LOGGER.info(arguments.getType(i));
                     if (arguments.getType(i).equals("nil")) {
                         ioHandler.to_eval_push(new IOValue(IOValue.Nil, null));
+                    } else if (arguments.getType(i).equals("string")) {
+                        ByteBuffer buf = arguments.getBytes(i);
+                        byte[] arr = new byte[buf.remaining()];
+                        buf.get(arr);
+                        ioHandler.to_eval_push(IOValue.of_obj(arr));
                     } else {
                         ioHandler.to_eval_push(IOValue.of_obj(arguments.get(i)));
                     }
@@ -68,8 +75,13 @@ public class WasmCtx implements IDynamicLuaObject {
             for (int i = 0; i < arguments.count(); i++) {
                 if (arguments.getType(i).equals("nil")) {
                     ioHandler.to_wasm_push(new IOValue(IOValue.Nil, null));
+                } else if (arguments.getType(i).equals("string")) {
+                    ByteBuffer buf = arguments.getBytes(i);
+                    byte[] arr = new byte[buf.remaining()];
+                    buf.get(arr);
+                    ioHandler.to_eval_push(IOValue.of_obj(arr));
                 } else {
-                    ioHandler.to_wasm_push(IOValue.of_obj(arguments.get(i)));
+                    ioHandler.to_eval_push(IOValue.of_obj(arguments.get(i)));
                 }
             }
 

@@ -19,4 +19,7 @@ while true do
     if wasm_mod.eval_string() ~= nil then
         wasm_mod.eval_result(load(wasm_mod.eval_string())())
     end
+    if wasm_mod.stopped() then
+        break
+    end
 end
