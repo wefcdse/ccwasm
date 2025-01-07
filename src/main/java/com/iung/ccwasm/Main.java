@@ -4,6 +4,7 @@ import com.dylibso.chicory.runtime.*;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.aot.AotMachine;
 import com.iung.ccwasm.wasm_api.HostFuncs;
 import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
@@ -29,7 +30,7 @@ public class Main {
 //        io.push(IOValue.type(0));
 
 
-        Module module = Module.builder(new File("./a.wasm")).withHostImports(hi).build();
+        Module module = Module.builder(new File("./a.wasm")).withMachineFactory(AotMachine::new).withHostImports(hi).build();
         Instance instance = module.instantiate();
         ExportFunction a = instance.export("call");
         a.apply();

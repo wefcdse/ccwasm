@@ -1,3 +1,4 @@
+pub mod pic_process;
 use cc_wasm_api::{
     addon::{
         arg::get_args,
@@ -5,98 +6,126 @@ use cc_wasm_api::{
         misc::{AsIfPixel, ColorId, Side},
     },
     export_funcs,
-    prelude::{CoroutineSpawn, TickSyncer},
-    throw, throw_exec,
+    prelude::{CoroutineSpawn, LuaResult, TickSyncer},
+    throw, throw_eval, throw_exec, time,
 };
 use image::{imageops::FilterType, ImageReader};
 use pic_process::{gen_map, nearest};
-use std::io::Cursor;
+use std::{io::Cursor, time::Duration};
 export_funcs!(init);
-macro_rules! time {
-    ($st:ident) => {
-        let $st = ::std::time::Instant::now();
-    };
-    ($st:ident, $info:literal) => {
-        throw_exec!(&format!(
-            "print({:?})",
-            format!("{}:{:?}", $info, $st.elapsed())
-        ));
-    };
-}
 
 fn init() {
-    TickSyncer::spawn_handle_coroutine();
-    async {
+    let tsstop = TickSyncer::spawn_handle_coroutine();
+    async move {
         let mut ts = TickSyncer::new();
+        throw_exec!("print(151)");
         let mut m = throw!(LocalMonitor::new_inited(Side::Top).await);
-        let file: Vec<u8> = throw!(get_args().await);
-
-        time!(s1);
-        let img =
-            throw!(throw!(ImageReader::new(Cursor::new(&file)).with_guessed_format()).decode());
-        time!(s1, "img load");
-
-        ts.sync().await;
-
-        time!(s2);
-        let img = {
-            let img = img.to_rgb8();
-            let (x, y) = {
-                let ix = img.width();
-                let iy = img.height();
-                let ixy_rate = ix as f32 / iy as f32;
-                let xy_rate = LocalMonitor::xy_rate();
-
-                let ry = (m.x() as f32 / ixy_rate / xy_rate) as u32;
-                let rx = (m.y() as f32 * ixy_rate * xy_rate) as u32;
-                if ry <= m.y() as u32 {
-                    (m.x() as u32, ry)
-                } else {
-                    (rx, m.y() as u32)
-                }
+        let (dir, sleeptime): (String, Option<String>) = throw!(get_args().await);
+        let sleeptime = sleeptime
+            .map(|v| v.parse().unwrap_or(1.0f32))
+            .unwrap_or(1.0);
+        let sleep = format!("sleep({})\n", sleeptime);
+        let filename: Vec<String> = throw_eval!(&format!("return unpack(fs.list({:?}))", dir));
+        let mut ss = Vec::new();
+        for file in filename {
+            let mut script = String::new();
+            let mut c = dir.clone();
+            if !c.ends_with("/") {
+                c += "/";
+            }
+            c += &file;
+            if gen_drawscript(&mut script, &mut ts, &c, &mut m)
+                .await
+                .is_ok()
+            {
+                ss.push(script);
             };
-            ts.sync().await;
-
-            let img = image::imageops::resize(&img, x, y, FilterType::Gaussian);
-            img
-        };
-        time!(s2, "img resize");
-        ts.sync().await;
-
-        time!(s3);
-        let last_map = gen_map(&img);
-        time!(s3, "pla gen");
-
-        for (idx, clr) in last_map.iter().enumerate() {
-            let target = clr.0;
-            let target = target[0] as u32 * 256 * 256 + target[1] as u32 * 256 + target[2] as u32;
-            throw!(
-                m.set_palette(ColorId::from_number_overflow(idx as u32), target)
-                    .await
-            );
         }
+        drop(ts);
+        tsstop.stop();
 
-        for x in 0..img.width() {
-            for y in 0..img.height() {
-                let pix = img.get_pixel(x, y);
-                m.write(
-                    x as usize + 1,
-                    y as usize + 1,
-                    AsIfPixel::colored_whitespace(ColorId::from_number_overflow(nearest(
-                        last_map, pix,
-                    )
-                        as u32)),
-                );
+        loop {
+            for s in &ss {
+                throw_exec!(s);
+                throw_exec!(&sleep);
             }
         }
-
-        time!(s4);
-        throw!(m.sync().await);
-        time!(s4, "img draw");
-        time!(s1, "total");
-        cc_wasm_api::coroutine::stop();
     }
     .spawn();
 }
 
-pub mod pic_process;
+async fn gen_drawscript(
+    script: &mut String,
+    ts: &mut TickSyncer,
+    pic: &str,
+    monitor: &mut LocalMonitor,
+) -> LuaResult<usize> {
+    let mut code = 0;
+
+    let file: Vec<u8> = {
+        let script = format!(r#"return fs.open({:?}, "r").readAll()"#, pic);
+        throw_eval!(&script)
+    };
+    ts.sync().await;
+
+    let img = ImageReader::new(Cursor::new(&file))
+        .with_guessed_format()?
+        .decode()?;
+    ts.sync().await;
+
+    let img = {
+        let img = img.to_rgb8();
+        let (x, y) = {
+            let ix = img.width();
+            let iy = img.height();
+            let ixy_rate = ix as f32 / iy as f32;
+            let xy_rate = LocalMonitor::xy_rate();
+
+            let ry = (monitor.x() as f32 / ixy_rate / xy_rate) as u32;
+            let rx = (monitor.y() as f32 * ixy_rate * xy_rate) as u32;
+            if ry <= monitor.y() as u32 {
+                (monitor.x() as u32, ry)
+            } else {
+                (rx, monitor.y() as u32)
+            }
+        };
+        ts.sync().await;
+
+        let img = image::imageops::resize(&img, x, y, FilterType::Gaussian);
+        img
+    };
+    ts.sync().await;
+
+    let (last_map, bg_color_index) = gen_map(&img);
+    ts.sync().await;
+
+    for (idx, clr) in last_map.iter().enumerate() {
+        let target = clr.0;
+        let target = target[0] as u32 * 256 * 256 + target[1] as u32 * 256 + target[2] as u32;
+        code +=
+            monitor.set_palette_script(script, ColorId::from_number_overflow(idx as u32), target);
+    }
+    ts.sync().await;
+
+    code += unsafe {
+        monitor.clear_script(script, ColorId::from_number_overflow(bg_color_index as u32))
+    };
+    ts.sync().await;
+
+    for x in 0..img.width() {
+        for y in 0..img.height() {
+            let pix = img.get_pixel(x, y);
+            monitor.write(
+                x as usize + 1,
+                y as usize + 1,
+                AsIfPixel::colored_whitespace(ColorId::from_number_overflow(
+                    nearest(last_map, pix) as u32,
+                )),
+            );
+        }
+    }
+    ts.sync().await;
+
+    code += unsafe { monitor.sync_script(script) };
+    Ok(code)
+}

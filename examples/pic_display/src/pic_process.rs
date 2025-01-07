@@ -25,7 +25,7 @@ pub fn nearest(map: [Rgb<u8>; L], pix: &Rgb<u8>) -> usize {
     min_idx
 }
 
-pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
+pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> ([Rgb<u8>; L], usize) {
     let mut hs: HashMap<_, usize> = HashMap::new();
     for x in 0..img.width() {
         for y in 0..img.height() {
@@ -46,6 +46,7 @@ pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
     };
     let mut epochs = 0;
     let mut last_map = pix_map;
+    let mut max_color = 0;
     loop {
         if epochs >= MAX_EPOCH {
             break;
@@ -79,8 +80,14 @@ pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
         }
 
         let new_pix_map = {
+            let mut max_count = 0;
+            let mut max_count_index = 0;
             let mut m = [Rgb([0u8, 0, 0]); L];
-            for (([a, b, c], count), p) in count_map.iter().zip(m.iter_mut()) {
+            for (i, (([a, b, c], count), p)) in count_map.iter().zip(m.iter_mut()).enumerate() {
+                if max_count < *count {
+                    max_count = *count;
+                    max_count_index = i;
+                }
                 if *count == 0 {
                     continue;
                 }
@@ -90,6 +97,8 @@ pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
                 let c = (*c / *count as i64) as u8;
                 *p = Rgb([a, b, c]);
             }
+            max_color = max_count_index;
+
             m
         };
         if new_pix_map == last_map {
@@ -97,7 +106,7 @@ pub fn gen_map(img: &impl GenericImageView<Pixel = Rgb<u8>>) -> [Rgb<u8>; L] {
         }
         last_map = new_pix_map;
     }
-    last_map
+    (last_map, max_color)
 }
 fn cacl_dist(a: [i64; 3], b: [i64; 3]) -> i64 {
     let higha = if a[0] > a[1] && a[0] > a[2] {

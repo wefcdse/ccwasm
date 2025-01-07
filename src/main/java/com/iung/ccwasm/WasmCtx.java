@@ -1,5 +1,6 @@
 package com.iung.ccwasm;
 
+import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.*;
 import com.dylibso.chicory.runtime.Module;
 import com.iung.ccwasm.wasm_api.HostFuncs;
@@ -30,7 +31,7 @@ public class WasmCtx implements IDynamicLuaObject {
                 .build();
 
         this.ioHandler = io;
-        this.wasm_module = Module.builder(file).withHostImports(hi).build();
+        this.wasm_module = Module.builder(file).withMachineFactory(AotMachine::new).withHostImports(hi).build();
         this.wasm_instance = wasm_module.instantiate();
 
         ExportFunction a = this.wasm_instance.export("export_func");
