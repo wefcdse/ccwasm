@@ -11,22 +11,45 @@ use cc_wasm_api::{
 };
 use image::{imageops::FilterType, ImageReader};
 use pic_process::{gen_map, nearest};
-use std::io::Cursor;
+use std::{io::Cursor, time::Duration};
 export_funcs!(init);
 
 fn init() {
-    TickSyncer::spawn_handle_coroutine();
-    async {
+    let tsstop = TickSyncer::spawn_handle_coroutine();
+    async move {
         let mut ts = TickSyncer::new();
         throw_exec!("print(151)");
         let mut m = throw!(LocalMonitor::new_inited(Side::Top).await);
-        let file: String = throw!(get_args().await);
+        let (dir, sleeptime): (String, Option<String>) = throw!(get_args().await);
+        let sleeptime = sleeptime
+            .map(|v| v.parse().unwrap_or(1.0f32))
+            .unwrap_or(1.0);
+        let sleep = format!("sleep({})\n", sleeptime);
+        let filename: Vec<String> = throw_eval!(&format!("return unpack(fs.list({:?}))", dir));
+        let mut ss = Vec::new();
+        for file in filename {
+            let mut script = String::new();
+            let mut c = dir.clone();
+            if !c.ends_with("/") {
+                c += "/";
+            }
+            c += &file;
+            if gen_drawscript(&mut script, &mut ts, &c, &mut m)
+                .await
+                .is_ok()
+            {
+                ss.push(script);
+            };
+        }
+        drop(ts);
+        tsstop.stop();
 
-        let mut script = String::new();
-        throw!(gen_drawscript(&mut script, &mut ts, &file,Q &mut m).await);
-
-        throw_exec!(&script);
-        cc_wasm_api::coroutine::stop();
+        loop {
+            for s in &ss {
+                throw_exec!(s);
+                throw_exec!(&sleep);
+            }
+        }
     }
     .spawn();
 }
@@ -40,7 +63,7 @@ async fn gen_drawscript(
     let mut code = 0;
 
     let file: Vec<u8> = {
-        let script = format!(r#"return fs.open({:?}, "r").readAll()"\#"#, pic);
+        let script = format!(r#"return fs.open({:?}, "r").readAll()"#, pic);
         throw_eval!(&script)
     };
     ts.sync().await;

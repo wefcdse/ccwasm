@@ -1,8 +1,10 @@
 package com.iung.ccwasm;
 
-import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.runtime.*;
-import com.dylibso.chicory.runtime.Module;
+//import com.dylibso.chicory.runtime.
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.iung.ccwasm.wasm_api.HostFuncs;
 import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
@@ -15,7 +17,7 @@ import java.util.Objects;
 public class WasmCtx implements IDynamicLuaObject {
     static String[] METHODS = {"load_wasm", "run_func"};
     IOHandler ioHandler;
-    Module wasm_module;
+    //    Module wasm_module;
     Instance wasm_instance;
     String[] methods;
 
@@ -24,15 +26,26 @@ public class WasmCtx implements IDynamicLuaObject {
         IOHandler io = new IOHandler();
         HostFuncs hfs = new HostFuncs(io);
 
-        HostImports hi = HostImports.builder()
-                .addFunction(HostFuncs.show_str())
-                .addFunction(hfs.all())
-                .addFunction(hfs.wasi())
-                .build();
+        Store store = new Store();
+        WasmModule wasmModule = Parser.parse(file);
+
+        store.addFunction(hfs.wasi());
+        store.addFunction(hfs.all());
+        store.addFunction(HostFuncs.show_str());
+//        HostImports hi = HostImports.builder()
+//                .addFunction(HostFuncs.show_str())
+//                .addFunction(hfs.all())
+//                .addFunction(hfs.wasi())
+//                .build();
 
         this.ioHandler = io;
-        this.wasm_module = Module.builder(file).withMachineFactory(AotMachine::new).withHostImports(hi).build();
-        this.wasm_instance = wasm_module.instantiate();
+//        this.wasm_module = Module.builder(file).withMachineFactory(AotMachine::new).withHostImports(hi).build();
+//        this.wasm_instance = store.instantiate("aaa",wasmModule);
+        this.wasm_instance = Instance
+                .builder(wasmModule)
+                .withImportValues(store.toImportValues())
+                .withMachineFactory(AotMachine::new)
+                .build();
 
         ExportFunction a = this.wasm_instance.export("export_func");
         a.apply();

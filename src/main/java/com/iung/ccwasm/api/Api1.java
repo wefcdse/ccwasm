@@ -1,7 +1,7 @@
 package com.iung.ccwasm.api;
 
 
-import com.dylibso.chicory.runtime.Module;
+//import com.dylibso.chicory.runtime.Module;
 import com.iung.ccwasm.Ccwasm;
 import com.iung.ccwasm.WasmCtx;
 import dan200.computercraft.api.lua.*;

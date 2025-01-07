@@ -5,51 +5,49 @@ use cc_wasm_api::{
         local_monitor::LocalMonitor,
         misc::{AsIfPixel, ColorId, Side},
     },
-    export_funcs,
+    exec_format, export_funcs,
     prelude::{CoroutineSpawn, LuaResult, TickSyncer},
     throw, throw_eval, throw_exec, time,
 };
 use image::{imageops::FilterType, ImageReader};
 use pic_process::{gen_map, nearest};
-use std::{io::Cursor, time::Duration};
+use std::{hint::black_box, io::Cursor, time::Instant};
 export_funcs!(init);
-
+fn bench() {
+    let mut sum: f32 = 1.;
+    for i in 0..10000_000 {
+        sum += (i as f32).sin();
+    }
+    black_box(sum);
+}
 fn init() {
-    let tsstop = TickSyncer::spawn_handle_coroutine();
-    async move {
+    TickSyncer::spawn_handle_coroutine();
+    async {
         let mut ts = TickSyncer::new();
+        // bench();
+        // bench();
+        // bench();
+
+        let t = Instant::now();
+        // bench();
+        // exec_format!("print(\"{:?}\")", t.elapsed());
+
+        // let t = Instant::now();
+        // exec_format!(
+        //     "local sum = 1\nfor i=1, 10000000, 1 do\n sum = sum + math.sin(i) \nend\nprint(sum)"
+        // );
+        // exec_format!("print(\"{:?}\")", t.elapsed());
+
         throw_exec!("print(151)");
         let mut m = throw!(LocalMonitor::new_inited(Side::Top).await);
-        let (dir, sleeptime): (String, Option<String>) = throw!(get_args().await);
-        let sleeptime = sleeptime
-            .map(|v| v.parse().unwrap_or(1.0f32))
-            .unwrap_or(1.0);
-        let sleep = format!("sleep({})\n", sleeptime);
-        let filename: Vec<String> = throw_eval!(&format!("return unpack(fs.list({:?}))", dir));
-        let mut ss = Vec::new();
-        for file in filename {
-            let mut script = String::new();
-            let mut c = dir.clone();
-            if !c.ends_with("/") {
-                c += "/";
-            }
-            c += &file;
-            if gen_drawscript(&mut script, &mut ts, &c, &mut m)
-                .await
-                .is_ok()
-            {
-                ss.push(script);
-            };
-        }
-        drop(ts);
-        tsstop.stop();
+        let file: String = throw!(get_args().await);
 
-        loop {
-            for s in &ss {
-                throw_exec!(s);
-                throw_exec!(&sleep);
-            }
-        }
+        let mut script = String::new();
+        throw!(gen_drawscript(&mut script, &mut ts, &file, &mut m).await);
+
+        exec_format!("print(\"{:?}\")", t.elapsed());
+        throw_exec!(&script);
+        cc_wasm_api::coroutine::stop();
     }
     .spawn();
 }
