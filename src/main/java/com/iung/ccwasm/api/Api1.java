@@ -2,6 +2,7 @@ package com.iung.ccwasm.api;
 
 
 //import com.dylibso.chicory.runtime.Module;
+
 import com.iung.ccwasm.Ccwasm;
 import com.iung.ccwasm.WasmCtx;
 import dan200.computercraft.api.lua.*;
@@ -40,8 +41,13 @@ public class Api1 implements ILuaAPI {
             Path p = Path.of(args.getString(0).chars().filter(c -> Character.isDigit(c) | Character.isAlphabetic(c) | c == '_' | c == '-').collect(StringBuilder::new, StringBuilder::appendCodePoint,
                     StringBuilder::append) + ".wasm");
             Path p1 = Ccwasm.WASM_ROOT.resolve(p);
-//            Ccwasm.LOGGER.info("{}", p1);
-            return new WasmCtx(p1.toFile());
+            boolean useAoT = true;
+            if (args.count() >= 2 && args.get(1) instanceof Boolean) {
+                useAoT = (Boolean) args.get(1);
+//                Ccwasm.LOGGER.info("use aot: {}", useAoT);
+//                Ccwasm.LOGGER.info("type: {}", args.getType(1));
+            }
+            return new WasmCtx(p1.toFile(), useAoT);
         } catch (Exception e) {
             throw new LuaException(e.getMessage());
         }

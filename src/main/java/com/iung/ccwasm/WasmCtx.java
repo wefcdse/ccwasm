@@ -21,7 +21,7 @@ public class WasmCtx implements IDynamicLuaObject {
     Instance wasm_instance;
     String[] methods;
 
-    public WasmCtx(File file) {
+    public WasmCtx(File file, boolean useAoT) {
 
         IOHandler io = new IOHandler();
         HostFuncs hfs = new HostFuncs(io);
@@ -41,11 +41,13 @@ public class WasmCtx implements IDynamicLuaObject {
         this.ioHandler = io;
 //        this.wasm_module = Module.builder(file).withMachineFactory(AotMachine::new).withHostImports(hi).build();
 //        this.wasm_instance = store.instantiate("aaa",wasmModule);
-        this.wasm_instance = Instance
+        var builder = Instance
                 .builder(wasmModule)
-                .withImportValues(store.toImportValues())
-                .withMachineFactory(MachineFactoryCompiler::compile)
-                .build();
+                .withImportValues(store.toImportValues());
+        if (useAoT) {
+            builder.withMachineFactory(MachineFactoryCompiler::compile);
+        }
+        this.wasm_instance = builder.build();
 
         ExportFunction a = this.wasm_instance.export("export_func");
         a.apply();
@@ -62,9 +64,9 @@ public class WasmCtx implements IDynamicLuaObject {
     public MethodResult callMethod(ILuaContext context, int method, IArguments arguments) throws LuaException {
 //        Ccwasm.LOGGER.info("wasm ctx: Slots {}", ioHandler.obj_hold.count());
 //        Ccwasm.LOGGER.info(arguments.getType(0));
-        for (int i = 0; i < arguments.count(); i++) {
-            Ccwasm.LOGGER.info("{}", arguments.get(i));
-        }
+//        for (int i = 0; i < arguments.count(); i++) {
+//            Ccwasm.LOGGER.info("{}", arguments.get(i));
+//        }
         // 填充io输入输出
         try {
             var func = methods[method];
