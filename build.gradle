@@ -55,6 +55,7 @@ dependencies {
     api shadow ('com.dylibso.chicory:runtime:1.5.3')
     api shadow ('com.dylibso.chicory:compiler:1.5.3')
     api shadow ('com.dylibso.chicory:wasi:1.5.3')
+//    api shadow('org.ow2.asm:asm-commons')
 //    implementation("org.graalvm.polyglot:polyglot:23.1.1")
 //    implementation("org.graalvm.polyglot:wasm:23.1.1")
 
@@ -64,6 +65,7 @@ tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.Shadow
     dependencies {
         exclude {
             it.moduleGroup != 'com.dylibso.chicory'
+//                    && it.moduleGroup != 'org.ow2.asm'
         }
     }
 }
