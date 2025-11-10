@@ -1,5 +1,6 @@
 package com.iung.ccwasm.wasm_api;
 
+import com.iung.ccwasm.Ccwasm;
 import com.iung.ccwasm.utils.SlotMap;
 
 import javax.annotation.Nullable;
@@ -48,6 +49,16 @@ public class IOHandler {
         this.to_wasm.clear();
         this.from_wasm.clear();
         this.failed = false;
+    }
+
+    public void log_all() {
+        Ccwasm.LOGGER.info("to: {} from: {}, failed: {}", to_wasm.size(), from_wasm.size(), failed);
+        this.to_wasm.forEach((IOValue v) -> {
+            Ccwasm.LOGGER.info("to wasm {}", v);
+        });
+        this.from_wasm.forEach((IOValue v) -> {
+            Ccwasm.LOGGER.info("from wasm {}", v);
+        });
     }
 
     public void fail() {
@@ -103,6 +114,7 @@ public class IOHandler {
     public void import_from_eval() {
         this.to_wasm_is_eval = true;
     }
+
     public void to_eval_push(IOValue v) {
         to_wasm_eval.add(v);
     }

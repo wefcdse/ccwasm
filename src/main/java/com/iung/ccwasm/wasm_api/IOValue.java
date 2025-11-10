@@ -22,6 +22,34 @@ public class IOValue {
         this.type = type;
     }
 
+    @Override
+    public java.lang.String toString() {
+        String typeName;
+        switch (type) {
+            case I32: typeName = "I32"; break;
+            case I64: typeName = "I64"; break;
+            case String: typeName = "String"; break;
+            case F32: typeName = "F32"; break;
+            case F64: typeName = "F64"; break;
+            case Type: typeName = "Type"; break;
+            case Table: typeName = "Table"; break;
+            case Nil: typeName = "Nil"; break;
+            case Bool: typeName = "Bool"; break;
+            default: typeName = "Unknown(" + type + ")";
+        }
+
+        String valueStr;
+        if (data == null) {
+            valueStr = "null";
+        } else if (type == String && data instanceof byte[]) {
+            // Handle byte[] specially for String type (as per current 'of(byte[])' logic)
+            valueStr = java.util.Arrays.toString((byte[]) data);
+        } else {
+            valueStr = data.toString();
+        }
+
+        return "[" + typeName + "]：" + valueStr;
+    }
 
     public String asString() {
         return (java.lang.String) data;

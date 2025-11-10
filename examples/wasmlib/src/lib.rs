@@ -1,9 +1,18 @@
 use cc_wasm_api::prelude::*;
 use std::time::{Duration, Instant};
-export_funcs!(init, aa);
+export_funcs!(init, aa, return_2, plus1, plus1str);
 
 fn aa(a: Either<Number, Nil>, b: String) -> (bool, Either<String, Nil>, i32) {
     (true, Either::First(format!("{:?}, {}", a, b)), 3)
+}
+fn return_2() -> i32 {
+    2
+}
+fn plus1(a: Number) -> i32 {
+    a.to_i32() + 1
+}
+fn plus1str(a: String) -> String {
+    format!("{}1", a)
 }
 
 fn init() {

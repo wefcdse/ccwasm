@@ -1,6 +1,6 @@
 package com.iung.ccwasm;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.*;
 //import com.dylibso.chicory.runtime.
 import com.dylibso.chicory.wasm.Parser;
@@ -44,7 +44,7 @@ public class WasmCtx implements IDynamicLuaObject {
         this.wasm_instance = Instance
                 .builder(wasmModule)
                 .withImportValues(store.toImportValues())
-                .withMachineFactory(AotMachine::new)
+                .withMachineFactory(MachineFactoryCompiler::compile)
                 .build();
 
         ExportFunction a = this.wasm_instance.export("export_func");
@@ -62,7 +62,10 @@ public class WasmCtx implements IDynamicLuaObject {
     public MethodResult callMethod(ILuaContext context, int method, IArguments arguments) throws LuaException {
 //        Ccwasm.LOGGER.info("wasm ctx: Slots {}", ioHandler.obj_hold.count());
 //        Ccwasm.LOGGER.info(arguments.getType(0));
-
+        for (int i = 0; i < arguments.count(); i++) {
+            Ccwasm.LOGGER.info("{}", arguments.get(i));
+        }
+        // 填充io输入输出
         try {
             var func = methods[method];
             if (func.equals("eval_result")) {
@@ -87,20 +90,23 @@ public class WasmCtx implements IDynamicLuaObject {
             }
             this.ioHandler.clear_all();
             for (int i = 0; i < arguments.count(); i++) {
+//                Ccwasm.LOGGER.info("arg{}: {}", i, arguments.getType(i));
                 if (arguments.getType(i).equals("nil")) {
                     ioHandler.to_wasm_push(new IOValue(IOValue.Nil, null));
                 } else if (arguments.getType(i).equals("string")) {
                     ByteBuffer buf = arguments.getBytes(i);
                     byte[] arr = new byte[buf.remaining()];
                     buf.get(arr);
-                    ioHandler.to_eval_push(IOValue.of_obj(arr));
+                    ioHandler.to_wasm_push(IOValue.of_obj(arr));
                 } else {
-                    ioHandler.to_eval_push(IOValue.of_obj(arguments.get(i)));
+                    ioHandler.to_wasm_push(IOValue.of_obj(arguments.get(i)));
                 }
+
             }
 
 
             ExportFunction a = this.wasm_instance.export(func);
+//            ioHandler.log_all();
             a.apply();
             if (this.ioHandler.failed) {
                 var except = new LuaException(Objects.requireNonNull(this.ioHandler.from_wasm_poll()).asString());
