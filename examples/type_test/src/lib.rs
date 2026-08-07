@@ -5,6 +5,7 @@ use std::cell::RefCell;
 export_funcs!(
     version,
     position,
+    check_bin,
     init,
     pi32,
     pi64,
@@ -43,6 +44,32 @@ fn position() -> String {
     #[cfg(not(feature = "from_save"))]
     {
         "global".to_owned()
+    }
+}
+
+/// 二进制传输测试：与编译时嵌入的 bin_test.txt 逐字节比对
+fn check_bin(data: Vec<u8>) -> String {
+    let expected: &[u8] = include_bytes!("bin_test.txt");
+    if data == expected {
+        "match".to_owned()
+    } else {
+        let diff_count = data
+            .iter()
+            .zip(expected.iter())
+            .filter(|(a, b)| a != b)
+            .count();
+        let first_diff = data
+            .iter()
+            .zip(expected.iter())
+            .position(|(a, b)| a != b)
+            .unwrap_or(usize::MAX);
+        format!(
+            "mismatch: len {} vs {}, diff {} bytes, first at {}",
+            data.len(),
+            expected.len(),
+            diff_count,
+            first_diff
+        )
     }
 }
 

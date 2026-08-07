@@ -43,13 +43,17 @@ ccwasm 测试文件说明
 ------------------
 
 游戏内（电脑终端）运行：
-  dofile("wasm/test/obj_demo.lua")    -- LuaObject 往返测试
-  dofile("wasm/test/test.lua")        -- 全面类型测试
-  dofile("wasm/test/load_order.lua")  -- 加载顺序验证
+  dofile("wasm/test/test.lua")         -- 总入口：依次执行全部测试脚本
+  dofile("wasm/test/obj_demo.lua")     -- LuaObject 往返测试
+  dofile("wasm/test/test_basic.lua")   -- 全面类型测试
+  dofile("wasm/test/test_bin.lua")     -- 二进制传输测试（含 UTF-8 对照）
+  dofile("wasm/test/load_order.lua")   -- 加载顺序验证
 
 输出文件（游戏内路径 shared/，磁盘路径 run/saves/<存档名>/computercraft/shared/）：
+  shared/all_tests.txt     -- test.lua 汇总各脚本执行状态
   shared/obj_demo.txt     -- obj_demo 测试结果
   shared/test.txt         -- type_test 测试结果（首行是 type_test version: <版本>）
+  shared/bin_test.txt     -- 二进制传输测试结果
   shared/load_order.txt   -- 加载顺序验证结果
 
 结果格式：每行一条用例，ok: 通过 / FAIL: 失败（含原因）/ skip: 跳过（已知限制），
@@ -58,6 +62,8 @@ ccwasm 测试文件说明
 四、已知限制
 ------------
 
-- 字符串通道不支持 UTF-8 多字节字符（中文等），测试中标记为 skip。
+- CC 的字符串/显示层不支持中文（自动转换为 ???）。
+  注意：字节通道是保真的（test_bin 322 字节含 UTF-8 全部无损），
+  损坏只发生在 CC 的字符串字面量/显示层，wasm 侧收到的字节是正确的。
 - 数字参数：Lua 数字一律以 f64 传入，Rust 侧 i32/i64/f32/f64 的 import
   会做数值适配（整数检查 + 范围检查）。
