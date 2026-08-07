@@ -4,6 +4,7 @@ use std::cell::RefCell;
 
 export_funcs!(
     version,
+    position,
     init,
     pi32,
     pi64,
@@ -31,6 +32,18 @@ fn init() {}
 
 fn version() -> String {
     env!("CARGO_PKG_VERSION").to_owned()
+}
+
+/// 编译期由 feature 决定：普通构建 = "global"，--features from_save = "save"
+fn position() -> String {
+    #[cfg(feature = "from_save")]
+    {
+        "save".to_owned()
+    }
+    #[cfg(not(feature = "from_save"))]
+    {
+        "global".to_owned()
+    }
 }
 
 fn pi32(x: i32) -> i32 {

@@ -30,7 +30,12 @@ bin/
 
 # fabric
 
-run/
+run/*
+!run/wasm/
+run/wasm/*
+!run/wasm/test/
+run/wasm/test/*
+!run/wasm/test/*.lua
 
 # java
 

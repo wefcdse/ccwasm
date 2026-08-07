@@ -44,14 +44,33 @@ public class Api1 implements ILuaAPI {
         try {
             Path p = Path.of(args.getString(0).chars().filter(c -> Character.isDigit(c) | Character.isAlphabetic(c) | c == '_' | c == '-').collect(StringBuilder::new, StringBuilder::appendCodePoint,
                     StringBuilder::append) + ".wasm");
-            Path p1 = Ccwasm.WASM_ROOT.resolve(p);
             boolean useAoT = true;
             if (args.count() >= 2 && args.get(1) instanceof Boolean) {
                 useAoT = (Boolean) args.get(1);
 //                Ccwasm.LOGGER.info("use aot: {}", useAoT);
 //                Ccwasm.LOGGER.info("type: {}", args.getType(1));
             }
-            return new WasmCtx(p1.toFile(), useAoT);
+            String source = "auto";
+            if (args.count() >= 3 && args.get(2) instanceof String) {
+                source = (String) args.get(2);
+            }
+            Path globalFile = Ccwasm.WASM_ROOT.resolve(p);
+            Path saveFile = Ccwasm.SAVE_WASM_ROOT == null ? null : Ccwasm.SAVE_WASM_ROOT.resolve(p);
+            File file;
+            switch (source) {
+                case "global" -> file = globalFile.toFile();
+                case "save" -> {
+                    if (saveFile != null && saveFile.toFile().exists()) {
+                        file = saveFile.toFile();
+                    } else {
+                        throw new LuaException("wasm not found in save dir: " + p);
+                    }
+                }
+                default -> file = (saveFile != null && saveFile.toFile().exists())
+                        ? saveFile.toFile()
+                        : globalFile.toFile();
+            }
+            return new WasmCtx(file, useAoT);
         } catch (Exception e) {
             throw new LuaException(e.getMessage());
         }
@@ -67,6 +86,9 @@ public class Api1 implements ILuaAPI {
     @Override
     public void startup() {
         cs.mount("wasm", WASM_ROOT);
+        if (Ccwasm.SAVE_WASM_ROOT != null) {
+            cs.mount("wasm_save", new FileMount(Ccwasm.SAVE_WASM_ROOT));
+        }
         MinecraftServer server = Ccwasm.SERVER;
         if (server != null) {
             WritableMount shared = ComputerCraftAPI.createSaveDirMount(server, SHARED_NAME, 1024L * 1024 * 1024);
@@ -80,6 +102,7 @@ public class Api1 implements ILuaAPI {
     @Override
     public void shutdown() {
         cs.unmount("wasm");
+        cs.unmount("wasm_save");
         cs.unmount(SHARED_NAME);
         ILuaAPI.super.shutdown();
     }

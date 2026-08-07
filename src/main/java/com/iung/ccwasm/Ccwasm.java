@@ -19,6 +19,8 @@ import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class Ccwasm implements ModInitializer {
@@ -33,12 +35,26 @@ public class Ccwasm implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final Path WASM_ROOT = Path.of("./wasm");
     public static volatile MinecraftServer SERVER = null;
+    public static volatile Path SAVE_WASM_ROOT = null;
 
     @Override
     public void onInitialize() {
         ComputerCraftAPI.registerAPIFactory(Api1::new);
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> Ccwasm.SERVER = server);
-        ServerLifecycleEvents.SERVER_STOPPED.register(server -> Ccwasm.SERVER = null);
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            Ccwasm.SERVER = server;
+            Path saveWasm = server.getSavePath(net.minecraft.util.WorldSavePath.ROOT).resolve("computercraft").resolve("wasm");
+            try {
+                Files.createDirectories(saveWasm);
+                Ccwasm.SAVE_WASM_ROOT = saveWasm;
+            } catch (IOException e) {
+                LOGGER.error("failed to create save wasm dir", e);
+                Ccwasm.SAVE_WASM_ROOT = null;
+            }
+        });
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+            Ccwasm.SERVER = null;
+            Ccwasm.SAVE_WASM_ROOT = null;
+        });
     }
 
 //    private static Block registerBlock(Identifier id, Block block) {
