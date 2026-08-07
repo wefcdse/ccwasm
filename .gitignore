@@ -36,6 +36,7 @@ run/wasm/*
 !run/wasm/test/
 run/wasm/test/*
 !run/wasm/test/*.lua
+!run/wasm/test/*.txt
 
 # java
 
