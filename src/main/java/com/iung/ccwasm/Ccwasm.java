@@ -6,6 +6,7 @@ import com.iung.ccwasm.api.Api1;
 import dan200.computercraft.api.peripheral.PeripheralLookup;
 import net.fabricmc.api.ModInitializer;
 import dan200.computercraft.api.ComputerCraftAPI;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -13,6 +14,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +32,13 @@ public class Ccwasm implements ModInitializer {
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final Path WASM_ROOT = Path.of("./wasm");
+    public static volatile MinecraftServer SERVER = null;
+
     @Override
     public void onInitialize() {
         ComputerCraftAPI.registerAPIFactory(Api1::new);
-
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> Ccwasm.SERVER = server);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> Ccwasm.SERVER = null);
     }
 
 //    private static Block registerBlock(Identifier id, Block block) {

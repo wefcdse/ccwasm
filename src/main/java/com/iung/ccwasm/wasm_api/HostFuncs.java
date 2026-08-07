@@ -242,7 +242,11 @@ public class HostFuncs {
         return build_host_fn((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             int key = args[0].asInt();
             var obj = ioHandler.obj_hold.get(key);
-            ioHandler.from_wasm_push(IOValue.of_obj(obj));
+            if (obj == null) {
+                ioHandler.from_wasm_push(new IOValue(IOValue.Nil, null));
+            } else {
+                ioHandler.from_wasm_push(IOValue.of_obj(obj));
+            }
             return null;
         }, MOD_NAME, "export_obj", List.of(ValueType.I32), List.of());
     }

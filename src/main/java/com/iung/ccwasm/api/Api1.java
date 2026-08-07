@@ -5,8 +5,11 @@ package com.iung.ccwasm.api;
 
 import com.iung.ccwasm.Ccwasm;
 import com.iung.ccwasm.WasmCtx;
+import dan200.computercraft.api.ComputerCraftAPI;
+import dan200.computercraft.api.filesystem.WritableMount;
 import dan200.computercraft.api.lua.*;
 import dan200.computercraft.core.filesystem.FileMount;
+import net.minecraft.server.MinecraftServer;
 
 
 import java.io.File;
@@ -17,6 +20,7 @@ import java.nio.file.Path;
 public class Api1 implements ILuaAPI {
     static String[] TARGET_GLO = {"wasm"};
     static FileMount WASM_ROOT;
+    public static final String SHARED_NAME = "shared";
 
     static {
         WASM_ROOT = new FileMount(Ccwasm.WASM_ROOT);
@@ -63,6 +67,20 @@ public class Api1 implements ILuaAPI {
     @Override
     public void startup() {
         cs.mount("wasm", WASM_ROOT);
+        MinecraftServer server = Ccwasm.SERVER;
+        if (server != null) {
+            WritableMount shared = ComputerCraftAPI.createSaveDirMount(server, SHARED_NAME, 1024L * 1024 * 1024);
+            cs.mountWritable(SHARED_NAME, shared);
+        } else {
+            Ccwasm.LOGGER.warn("server not started, skip mounting shared");
+        }
         ILuaAPI.super.startup();
+    }
+
+    @Override
+    public void shutdown() {
+        cs.unmount("wasm");
+        cs.unmount(SHARED_NAME);
+        ILuaAPI.super.shutdown();
     }
 }

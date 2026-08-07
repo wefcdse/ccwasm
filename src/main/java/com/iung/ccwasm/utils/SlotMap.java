@@ -2,15 +2,14 @@ package com.iung.ccwasm.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class SlotMap<T> {
     private final Map<Integer, T> map;
-    private Random rand;
+    private int nextKey;
 
     public SlotMap() {
         map = new HashMap<>();
-        rand = new Random();
+        nextKey = 1;
     }
 
     public T get(int idx) {
@@ -26,14 +25,11 @@ public class SlotMap<T> {
     }
 
     public int put(T data) {
-        return 0;
-//        while (true) {
-//
-//            int key = rand.nextInt();
-//            if (!map.containsKey(key) && key != 0) {
-//                map.put(key, data);
-//                return key;
-//            }
-//        }
+        int key = nextKey++;
+        if (nextKey <= 0) {
+            nextKey = 1;
+        }
+        map.put(key, data);
+        return key;
     }
 }
