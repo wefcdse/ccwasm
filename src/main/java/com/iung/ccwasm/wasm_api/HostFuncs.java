@@ -136,8 +136,8 @@ public class HostFuncs {
         return build_host_fn((Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
             var base_addr = args[0].asInt();
             var len = args[1].asInt();
-            var str = instance.memory().readString(base_addr, len);
-            ioHandler.from_wasm_push(IOValue.of(str));
+            byte[] bytes = instance.memory().readBytes(base_addr, len);
+            ioHandler.from_wasm_push(IOValue.of(bytes));
             return null;
         }, MOD_NAME, "export_string", List.of(ValueType.I32, ValueType.I32), List.of());
     }

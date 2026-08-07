@@ -52,6 +52,9 @@ public class IOValue {
     }
 
     public String asString() {
+        if (data instanceof byte[] bytes) {
+            return new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+        }
         return (java.lang.String) data;
     }
 

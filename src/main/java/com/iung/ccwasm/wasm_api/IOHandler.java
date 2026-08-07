@@ -16,7 +16,7 @@ public class IOHandler {
     }
 
     private Queue<IOValue> from_wasm;
-    public SlotMap obj_hold;
+    public SlotMap<Object> obj_hold;
     public boolean failed;
 
     private Queue<IOValue> to_wasm_eval;
@@ -39,7 +39,7 @@ public class IOHandler {
         this.to_wasm = new LinkedList<>();
         this.from_wasm = new LinkedList<>();
         this.failed = false;
-        this.obj_hold = new SlotMap();
+        this.obj_hold = new SlotMap<>();
         this.to_eval = null;
         this.to_wasm_is_eval = false;
         this.to_wasm_eval = new LinkedList<>();
