@@ -1,7 +1,7 @@
 -- AOT 大模块测试：python.wasm（9.6MB）用 AOT 加载
 -- 1.7.5 修复 ClassTooLarge 崩溃：大模块 AOT 不再崩（bridge 类拆分）
--- 首次编译用后台预编译（wasm.precompile，不占电脑线程，避免 CC 超时杀编译），完成后写磁盘缓存
--- 再连续 load_wasm 三次，对比每次耗时（第 1 次命中缓存 vs 之后也应秒开）
+-- 预编译用后台 API（不占电脑线程，避免 CC 超时杀编译）
+-- 再连续 load_wasm 三次，对比每次耗时（每次都真实 eval 使用）
 -- 结果写入 shared/python_aot.txt
 local clear_f = fs.open("shared/python_aot.txt", "w")
 if clear_f then
@@ -18,15 +18,12 @@ local function record(msg)
 end
 
 local pre = os.clock()
+-- 等价于 shell 命令 wasm_compile_aot python（dofile 环境无 shell 库，内联实现）
 wasm.precompile("python")
-local status = nil
-while true do
-    status = wasm.precompile_done("python")
-    if status ~= "compiling" then
-        break
-    end
+while wasm.precompile_done("python") == "compiling" do
     os.sleep(0.2)
 end
+local status = wasm.precompile_done("python")
 record(string.format("precompile status: %s (%.0fs)", status, os.clock() - pre))
 if status ~= "done" then
     record("python_aot: done")

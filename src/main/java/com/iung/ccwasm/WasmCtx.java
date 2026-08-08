@@ -55,14 +55,11 @@ public class WasmCtx implements IDynamicLuaObject {
         if (!f.isDone()) {
             return "compiling";
         }
-        boolean ok;
         try {
-            ok = f.get();
+            return f.get() ? "done" : "failed";
         } catch (Exception e) {
-            ok = false;
+            return "failed";
         }
-        AOT_TASKS.remove(key);
-        return ok ? "done" : "failed";
     }
     IOHandler ioHandler;
     //    Module wasm_module;
