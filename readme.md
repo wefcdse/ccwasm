@@ -27,6 +27,13 @@ into the `wasm` folder (`.minecraft/wasm/`), then in game:
 
 - `wasm.load_wasm(name, [useAoT], [source])` — load a module (no `.wasm` extension).
   `useAoT` defaults to `true`; `source` is `"auto"` (save first) / `"global"` / `"save"`.
+- `wasm.load_wasm(name, useAoT, source, useStdio)` — with `useStdio = true` the module gets
+  three extra methods:
+  - `stdin(...)` — push strings into the WASI stdin (empty stdin = EOF, never blocks)
+  - `stdout()` — return all output written to stdout since the last call (and clear it)
+  - `stderr()` — same for stderr
+  note: python's `sys.stderr.write` is line-buffered (chicory reports isatty), so call
+  `flush()` explicitly if there is no newline; `print` already flushes.
 - `wasm.precompile(name, [source])` — start background AOT compilation (thread `ccwasm-aot`),
   writes result to the disk cache. Needed for large modules, because a single Lua call is
   limited by the computer thread timeout (~7.5s), while AOT compiling a big module
