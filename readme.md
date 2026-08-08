@@ -73,7 +73,15 @@ minesweeper, pic_display, txt_display, python, obj_demo, type_test.
 - in computer craft's shell run `exec_wasm pic_display [path to picture file(in cc's fs)]`
 
 [python interpreter example](https://github.com/wefcdse/ccwasm/blob/master/example_wasm/python.wasm),
-download this file and put it in `./wasm/`, and then in computer craft lua run:
+download this file and put it in `./wasm/`.
+
+python.wasm is big (9.6MB): AOT compiling it takes ~11s, which exceeds the computer thread
+timeout for a single Lua call, so **precompile it first** (runs in a background thread and
+writes the AOT disk cache):
+```
+wasm_compile_aot python
+```
+then in computer craft lua run:
 ```lua
 py = wasm.load_wasm("python") -- AOT, loads from disk cache in ~1.4s
 py.init()
