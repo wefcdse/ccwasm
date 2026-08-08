@@ -25,9 +25,9 @@
 
 ## lua api
 
-- `wasm.load_wasm(name, [useAoT], [source])` — 加载模块（不带 `.wasm` 扩展名）。
-  `useAoT` 默认 `true`；`source` 为 `"auto"`（存档优先）/ `"global"` / `"save"`。
-- `wasm.load_wasm(name, useAoT, source, useStdio)` — `useStdio = true` 时模块多三个方法：
+- `wasm.load_wasm(name, [useAoT], [source], [useStdio])` — 加载模块（不带 `.wasm` 扩展名）。
+  `useAoT` 默认 `true`；`source` 为 `"auto"`（存档优先）/ `"global"` / `"save"`；
+  `useStdio = true` 时模块多三个方法：
   - `stdin(...)` — 把字符串推入 WASI stdin（stdin 空 = EOF，不会阻塞）
   - `stdout()` — 取走自上次调用以来写入 stdout 的所有输出（并清空）
   - `stderr()` — 同上，针对 stderr

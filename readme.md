@@ -1,5 +1,7 @@
 # Description
 
+[中文文档](README_CN.md)
+
 this mod add [wasm](https://webassembly.org/) support for
 [CC: Tweaked](https://www.curseforge.com/minecraft/mc-mods/cc-tweaked).
 
@@ -25,10 +27,9 @@ into the `wasm` folder (`.minecraft/wasm/`), then in game:
 
 ## lua api
 
-- `wasm.load_wasm(name, [useAoT], [source])` — load a module (no `.wasm` extension).
+- `wasm.load_wasm(name, [useAoT], [source], [useStdio])` — load a module (no `.wasm` extension).
   `useAoT` defaults to `true`; `source` is `"auto"` (save first) / `"global"` / `"save"`.
-- `wasm.load_wasm(name, useAoT, source, useStdio)` — with `useStdio = true` the module gets
-  three extra methods:
+  with `useStdio = true` the module gets three extra methods:
   - `stdin(...)` — push strings into the WASI stdin (empty stdin = EOF, never blocks)
   - `stdout()` — return all output written to stdout since the last call (and clear it)
   - `stderr()` — same for stderr
