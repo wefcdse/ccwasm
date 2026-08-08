@@ -9,12 +9,14 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.iung.ccwasm.wasm_api.HostFuncs;
 import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
+import com.iung.ccwasm.wasm_api.StdioBuffer;
 import dan200.computercraft.api.lua.*;
 import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -65,8 +67,13 @@ public class WasmCtx implements IDynamicLuaObject {
     //    Module wasm_module;
     Instance wasm_instance;
     String[] methods;
+    StdioBuffer stdio;
 
     public WasmCtx(File file, boolean useAoT) {
+        this(file, useAoT, false);
+    }
+
+    public WasmCtx(File file, boolean useAoT, boolean useStdio) {
 
         IOHandler io = new IOHandler();
         HostFuncs hfs = new HostFuncs(io);
@@ -74,7 +81,9 @@ public class WasmCtx implements IDynamicLuaObject {
         Store store = new Store();
         WasmModule wasmModule = Parser.parse(file);
 
-        store.addFunction(hfs.wasi());
+        this.stdio = useStdio ? new StdioBuffer() : null;
+
+        store.addFunction(hfs.wasi(stdio));
         store.addFunction(hfs.all());
         store.addFunction(HostFuncs.show_str());
 //        HostImports hi = HostImports.builder()
@@ -97,6 +106,13 @@ public class WasmCtx implements IDynamicLuaObject {
         ExportFunction a = this.wasm_instance.export("export_func");
         a.apply();
         this.methods = this.ioHandler.getFrom_wasm().stream().map(IOValue::asString).toArray(String[]::new);
+        if (useStdio) {
+            String[] withStdio = Arrays.copyOf(this.methods, this.methods.length + 3);
+            withStdio[this.methods.length] = "stdin";
+            withStdio[this.methods.length + 1] = "stdout";
+            withStdio[this.methods.length + 2] = "stderr";
+            this.methods = withStdio;
+        }
         this.ioHandler.clear_all();
     }
 
@@ -146,6 +162,21 @@ public class WasmCtx implements IDynamicLuaObject {
             }
             if (func.equals("eval_string")) {
                 return MethodResult.of(ioHandler.getTo_eval());
+            }
+            if (func.equals("stdin")) {
+                for (int i = 0; i < arguments.count(); i++) {
+                    ByteBuffer buf = arguments.getBytes(i);
+                    byte[] arr = new byte[buf.remaining()];
+                    buf.get(arr);
+                    stdio.pushStdin(arr);
+                }
+                return MethodResult.of();
+            }
+            if (func.equals("stdout")) {
+                return MethodResult.of(stdio.readStdout());
+            }
+            if (func.equals("stderr")) {
+                return MethodResult.of(stdio.readStderr());
             }
             this.ioHandler.clear_all();
             for (int i = 0; i < arguments.count(); i++) {

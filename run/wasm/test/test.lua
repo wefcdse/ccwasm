@@ -24,6 +24,7 @@ local tests = {
     "wasm/test/load_order.lua",
     "wasm/test/test_aot.lua",
     "wasm/test/test_python.lua",
+    "wasm/test/test_stdio.lua",
 }
 
 for _, path in ipairs(tests) do

@@ -43,7 +43,8 @@ public class Api1 implements ILuaAPI {
     public final WasmCtx load_wasm(ILuaContext ctx, IArguments args) throws LuaException {
         try {
             File file = resolveWasmFile(args);
-            return new WasmCtx(file, useAoT(args));
+            boolean useStdio = args.count() >= 4 && args.get(3) instanceof Boolean && (Boolean) args.get(3);
+            return new WasmCtx(file, useAoT(args), useStdio);
         } catch (Exception e) {
             throw new LuaException(e.getMessage());
         }

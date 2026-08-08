@@ -11,6 +11,7 @@ import com.iung.ccwasm.Ccwasm;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -51,17 +52,39 @@ public class HostFuncs {
         this.ioHandler = ioHandler;
     }
 
-    public HostFunction[] wasi() {
-        var fakeStdin = new ByteArrayInputStream("".getBytes());
-// We will create two output streams to capture stdout and stderr
-        var fakeStdout = new ByteArrayOutputStream();
-        var fakeStderr = new ByteArrayOutputStream();
-// now pass those to our wasi options builder
-        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStderr(fakeStderr).withStdin(fakeStdin).build();
+    public HostFunction[] wasi(StdioBuffer stdio) {
+        var opts = WasiOptions.builder();
+        if (stdio == null) {
+            opts.withStdout(new ByteArrayOutputStream())
+                    .withStderr(new ByteArrayOutputStream())
+                    .withStdin(new ByteArrayInputStream(new byte[0]));
+        } else {
+            opts.withStdout(new OutputStream() {
+                @Override
+                public void write(int b) {
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) {
+                    stdio.writeStdout(Arrays.copyOfRange(b, off, off + len));
+                }
+            });
+            opts.withStderr(new OutputStream() {
+                @Override
+                public void write(int b) {
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) {
+                    stdio.writeStderr(Arrays.copyOfRange(b, off, off + len));
+                }
+            });
+            opts.withStdin(stdio.stdin());
+        }
         var wasi = WasiPreview1
                 .builder()
                 .withLogger(new NoLogger())
-                .withOptions(wasiOpts)
+                .withOptions(opts.build())
                 .build();
         return wasi.toHostFunctions();
     }
