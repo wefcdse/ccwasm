@@ -1,6 +1,7 @@
 package com.iung.ccwasm;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.experimental.dircache.DirectoryCache;
 import com.dylibso.chicory.runtime.*;
 //import com.dylibso.chicory.runtime.
 import com.dylibso.chicory.wasm.Parser;
@@ -9,13 +10,60 @@ import com.iung.ccwasm.wasm_api.HostFuncs;
 import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
 import dan200.computercraft.api.lua.*;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.function.Function;
 
 public class WasmCtx implements IDynamicLuaObject {
     static String[] METHODS = {"load_wasm", "run_func"};
+    static final Map<String, CompletableFuture<Boolean>> AOT_TASKS = new ConcurrentHashMap<>();
+    static final ExecutorService AOT_EXEC = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "ccwasm-aot");
+        t.setDaemon(true);
+        return t;
+    });
+
+    public static void precompile(String key, File file) {
+        AOT_TASKS.compute(key, (k, old) ->
+                (old != null && !old.isDone())
+                        ? old
+                        : CompletableFuture.supplyAsync(() -> {
+                    try {
+                        aotFactory(Parser.parse(file));
+                        return true;
+                    } catch (Exception e) {
+                        Ccwasm.LOGGER.error("AOT precompile failed for {}: {}", key, e.toString());
+                        return false;
+                    }
+                }, AOT_EXEC));
+    }
+
+    public static String precompileStatus(String key) {
+        CompletableFuture<Boolean> f = AOT_TASKS.get(key);
+        if (f == null) {
+            return null;
+        }
+        if (!f.isDone()) {
+            return "compiling";
+        }
+        boolean ok;
+        try {
+            ok = f.get();
+        } catch (Exception e) {
+            ok = false;
+        }
+        AOT_TASKS.remove(key);
+        return ok ? "done" : "failed";
+    }
     IOHandler ioHandler;
     //    Module wasm_module;
     Instance wasm_instance;
@@ -45,7 +93,7 @@ public class WasmCtx implements IDynamicLuaObject {
                 .builder(wasmModule)
                 .withImportValues(store.toImportValues());
         if (useAoT) {
-            builder.withMachineFactory(MachineFactoryCompiler::compile);
+            builder.withMachineFactory(aotFactory(wasmModule));
         }
         this.wasm_instance = builder.build();
 
@@ -53,6 +101,18 @@ public class WasmCtx implements IDynamicLuaObject {
         a.apply();
         this.methods = this.ioHandler.getFrom_wasm().stream().map(IOValue::asString).toArray(String[]::new);
         this.ioHandler.clear_all();
+    }
+
+    static Function<Instance, Machine> aotFactory(WasmModule module) {
+        Path cacheDir = FabricLoader.getInstance().getGameDir().resolve("wasm_cache");
+        try {
+            return MachineFactoryCompiler.builder(module)
+                    .withCache(new DirectoryCache(cacheDir))
+                    .compile();
+        } catch (Exception e) {
+            Ccwasm.LOGGER.warn("AOT cache unusable, recompiling without cache: {}", e.getMessage());
+            return MachineFactoryCompiler.builder(module).compile();
+        }
     }
 
     @Override

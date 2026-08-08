@@ -42,37 +42,67 @@ public class Api1 implements ILuaAPI {
     @LuaFunction
     public final WasmCtx load_wasm(ILuaContext ctx, IArguments args) throws LuaException {
         try {
-            Path p = Path.of(args.getString(0).chars().filter(c -> Character.isDigit(c) | Character.isAlphabetic(c) | c == '_' | c == '-').collect(StringBuilder::new, StringBuilder::appendCodePoint,
-                    StringBuilder::append) + ".wasm");
-            boolean useAoT = true;
-            if (args.count() >= 2 && args.get(1) instanceof Boolean) {
-                useAoT = (Boolean) args.get(1);
-//                Ccwasm.LOGGER.info("use aot: {}", useAoT);
-//                Ccwasm.LOGGER.info("type: {}", args.getType(1));
+            File file = resolveWasmFile(args);
+            return new WasmCtx(file, useAoT(args));
+        } catch (Exception e) {
+            throw new LuaException(e.getMessage());
+        }
+    }
+
+    @LuaFunction
+    public final void precompile(ILuaContext ctx, IArguments args) throws LuaException {
+        try {
+            File file = resolveWasmFile(args);
+            WasmCtx.precompile(wasmName(args), file);
+        } catch (Exception e) {
+            throw new LuaException(e.getMessage());
+        }
+    }
+
+    @LuaFunction
+    public final String precompile_done(ILuaContext ctx, IArguments args) throws LuaException {
+        try {
+            return WasmCtx.precompileStatus(wasmName(args));
+        } catch (Exception e) {
+            throw new LuaException(e.getMessage());
+        }
+    }
+
+    static String wasmName(IArguments args) throws LuaException {
+        return args.getString(0).chars().filter(c -> Character.isDigit(c) | Character.isAlphabetic(c) | c == '_' | c == '-').collect(StringBuilder::new, StringBuilder::appendCodePoint,
+                StringBuilder::append).toString();
+    }
+
+    static boolean useAoT(IArguments args) throws LuaException {
+        if (args.count() >= 2 && args.get(1) instanceof Boolean) {
+            return (Boolean) args.get(1);
+        }
+        return true;
+    }
+
+    static File resolveWasmFile(IArguments args) throws LuaException {
+        Path p = Path.of(wasmName(args) + ".wasm");
+        String source = "auto";
+        if (args.count() >= 3 && args.get(2) instanceof String) {
+            source = (String) args.get(2);
+        }
+        Path globalFile = Ccwasm.WASM_ROOT.resolve(p);
+        Path saveFile = Ccwasm.SAVE_WASM_ROOT == null ? null : Ccwasm.SAVE_WASM_ROOT.resolve(p);
+        switch (source) {
+            case "global" -> {
+                return globalFile.toFile();
             }
-            String source = "auto";
-            if (args.count() >= 3 && args.get(2) instanceof String) {
-                source = (String) args.get(2);
-            }
-            Path globalFile = Ccwasm.WASM_ROOT.resolve(p);
-            Path saveFile = Ccwasm.SAVE_WASM_ROOT == null ? null : Ccwasm.SAVE_WASM_ROOT.resolve(p);
-            File file;
-            switch (source) {
-                case "global" -> file = globalFile.toFile();
-                case "save" -> {
-                    if (saveFile != null && saveFile.toFile().exists()) {
-                        file = saveFile.toFile();
-                    } else {
-                        throw new LuaException("wasm not found in save dir: " + p);
-                    }
+            case "save" -> {
+                if (saveFile != null && saveFile.toFile().exists()) {
+                    return saveFile.toFile();
                 }
-                default -> file = (saveFile != null && saveFile.toFile().exists())
+                throw new LuaException("wasm not found in save dir: " + p);
+            }
+            default -> {
+                return (saveFile != null && saveFile.toFile().exists())
                         ? saveFile.toFile()
                         : globalFile.toFile();
             }
-            return new WasmCtx(file, useAoT);
-        } catch (Exception e) {
-            throw new LuaException(e.getMessage());
         }
     }
 
