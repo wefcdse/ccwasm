@@ -32,8 +32,6 @@ into the `wasm` folder (`.minecraft/wasm/`), then in game:
   - `stdin(...)` — push strings into the WASI stdin (empty stdin = EOF, never blocks)
   - `stdout()` — return all output written to stdout since the last call (and clear it)
   - `stderr()` — same for stderr
-  note: python's `sys.stderr.write` is line-buffered (chicory reports isatty), so call
-  `flush()` explicitly if there is no newline; `print` already flushes.
 - `wasm.precompile(name, [source])` — start background AOT compilation (thread `ccwasm-aot`),
   writes result to the disk cache. Needed for large modules, because a single Lua call is
   limited by the computer thread timeout (~7.5s), while AOT compiling a big module
@@ -95,6 +93,10 @@ py.init()
 py.exec("import time as t")
 print(py.eval("t.time()"))
 ```
+
+note: when using stdio (`load_wasm(..., true)`), python's `sys.stderr.write` is line-buffered
+(chicory reports isatty), so call `flush()` explicitly if there is no newline; `print` flushes
+on its own.
 
 # Tests
 
