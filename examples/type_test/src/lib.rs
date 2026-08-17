@@ -6,6 +6,8 @@ export_funcs!(
     version,
     position,
     check_bin,
+    echo_bytes,
+    echo_all,
     init,
     pi32,
     pi64,
@@ -71,6 +73,26 @@ fn check_bin(data: Vec<u8>) -> String {
             first_diff
         )
     }
+}
+
+/// 字节透传：吞 Vec<u8> 原样吐出（验证中文等二进制内容经 Rust 无损往返）
+fn echo_bytes(data: Vec<u8>) -> Vec<u8> {
+    data
+}
+
+/// 全类型 echo：i32/i64/f32/f64/bool/String/Vec<u8>/Option/Number 各收一个再原样吐回
+fn echo_all(
+    a: i32,
+    b: i64,
+    c: f32,
+    d: f64,
+    e: bool,
+    f: String,
+    g: Vec<u8>,
+    h: Option<i32>,
+    i: Number,
+) -> (i32, i64, f32, f64, bool, String, Vec<u8>, Option<i32>, Number) {
+    (a, b, c, d, e, f, g, h, i)
 }
 
 fn pi32(x: i32) -> i32 {

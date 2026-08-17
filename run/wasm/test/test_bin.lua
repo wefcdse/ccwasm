@@ -62,6 +62,38 @@ if data then
     check(r2 == lit, "utf8 source literal via pstr round-trip", tostring(#r2) .. " vs " .. tostring(#lit))
 end
 
+-- 用例 3：纯中文 txt 文件（二进制）经 Rust 字节透传（echo_bytes）后写回 shared，自动+人工对比
+-- 链路：wasm/test/chinese.txt (rb) -> Lua -> wasm echo_bytes(Vec<u8> 原样吐) -> Lua -> shared/chinese_out.txt (wb)
+-- 人工核对：源文件与 shared/chinese_out.txt 应逐字节一致
+local src = fs.open("wasm/test/chinese.txt", "rb")
+local srcData = nil
+if src then
+    srcData = src.readAll()
+    src.close()
+end
+check(srcData ~= nil, "read pure-chinese txt as binary", tostring(srcData and #srcData))
+
+if srcData then
+    local m2 = wasm.load_wasm("type_test", false, "global")
+    local echoed = m2.echo_bytes(srcData)
+    check(echoed == srcData, "chinese bytes through rust echo_bytes round-trip",
+        tostring(#srcData) .. " bytes in, " .. tostring(#echoed) .. " bytes out")
+    local out = fs.open("shared/chinese_out.txt", "wb")
+    if out then
+        out.write(echoed)
+        out.close()
+    else
+        check(false, "write chinese_out.txt to shared", "cannot open for write")
+    end
+    local back = fs.open("shared/chinese_out.txt", "rb")
+    local backData = back and back.readAll()
+    if back then
+        back.close()
+    end
+    check(backData == srcData, "rewritten shared/chinese_out.txt matches source",
+        tostring(srcData and #srcData) .. " bytes src vs " .. tostring(backData and #backData) .. " bytes back")
+end
+
 if failed == 0 then
     record("bin_test: all tests passed")
 else

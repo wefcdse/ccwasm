@@ -1,0 +1,26 @@
+# ccwasm.toml — build & deploy config for `ccwasm build` / `ccwasm deploy`.
+# Deploy paths may be absolute or relative to this file.
+
+[build]
+wasm_name = "spine" # 产物文件名（不含 .wasm）；默认 = Cargo lib 名
+release = true      # 用 release 构建（生成体积更小）
+
+# 部署目标：build/deploy 会把 .wasm 复制到每个启用的 [[deploy]] 的 path。
+# path 填绝对路径，或相对本文件的路径。常用位置（游戏目录 .minecraft 下）：
+#   - 全局程序目录：.minecraft/wasm
+#   - 存档专属目录：.minecraft/saves/<存档名>/computercraft/wasm
+# 取消注释下面的示例并修改路径即可。
+#
+[[deploy]]
+name = "mc-debug"
+path = "../../run/wasm"
+#
+# [[deploy]]
+# name = "mc-存档"
+# path = "D:/Games/.minecraft/saves/新世界/computercraft/wasm"
+# wasm_name = "other"                    # 可选：该目标下用不同文件名
+# enabled = false                        # 可选：false 则跳过
+#
+# [[deploy]]
+# name = "dev-相对路径"                  # path 也可以写相对本文件的路径
+# path = "../ccwasm/run/wasm"
