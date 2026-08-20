@@ -9,7 +9,7 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-aada = "0.1.0"
+aada = { path = "E:/project/aada/aada" }
 cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, features = [
     "coroutine",
     "eval",
@@ -17,3 +17,6 @@ cc_wasm_api = { path = "../../../cc_wasm_api", default-features = false, feature
     "debug",
 ] }
 image = "0.25.10"
+
+[profile.dev]
+opt-level = 3

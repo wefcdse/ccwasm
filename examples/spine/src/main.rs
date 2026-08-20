@@ -6,36 +6,27 @@
 //!   - `wasm.load_wasm("spine")`  then call the exported functions directly
 //!   - `exec_wasm spine`          event-loop driver (needs the `coroutine` feature)
 
-use std::io::Cursor;
+use std::{fs, io::Cursor};
 
 use aada::prelude::*;
-use cc_wasm_api::{eval::yield_lua, prelude::*, time};
+use cc_wasm_api::lua_api::LuaResult;
 use image::{
     ColorType::{self},
     GenericImage, GenericImageView, ImageFormat, Pixel, Rgba,
 };
-export_funcs!(init);
 
-/// Called once when the module is loaded from Lua.
-fn init() {
-    println!("spine: init");
-    println!("version: 4");
-    TickSyncer::spawn_handle_coroutine();
-    async_main().spawn();
-}
-
-async fn async_main() -> LuaResult<()> {
+fn main() -> LuaResult<()> {
     // let mut ts = TickSyncer::new();
     let skel = include_str!("../asset/skel");
     let atlas = include_str!("../asset/atlas.txt");
     let texture = include_bytes!("../asset/texture.png");
 
     let (rt, _pages) = build_rt(&skel, &atlas)?;
-    let anim = rt.animates.get_index("Happy_7").ok_or("wrong anim")?;
+    let anim = rt.animates.get_index("Close_1").ok_or("wrong anim")?;
     let skin = rt.skins.get_index("default").ok_or("wrong skin")?;
     let mut config = AnimateConfig::new();
 
-    let sampled = rt.sample(anim, &mut config, 0.0);
+    let sampled = rt.sample(anim, &mut config, 0.2);
     let mut pose = rt.pose_from_sample(&sampled); // 可在此修改 pose（约束前骨骼操纵）
     let state = rt.constraint_state(&sampled); // 可在此覆盖约束参数
     rt.apply_constraint_state(&mut pose, &state);
@@ -47,7 +38,7 @@ async fn async_main() -> LuaResult<()> {
     // let (width, height, half_extent, offset) = aabb.to_params();
     let (width, height) = ((max - min).x, (max - min).y);
     let (w, h) = (width as usize, height as usize);
-    let (w, h) = (w * 8, h * 8);
+    let (w, h) = (w * 1, h * 1);
     let mut output = image::DynamicImage::new(w as u32, h as u32, ColorType::Rgba8);
 
     let texture = image::load_from_memory_with_format(texture, ImageFormat::Png)?;
@@ -63,8 +54,6 @@ async fn async_main() -> LuaResult<()> {
             pix.channels()[3] as f32 / 255.0,
         ]
     };
-    yield_lua().await;
-    time!(render);
     payloads.render_bitmap(
         w,
         h,
@@ -85,11 +74,9 @@ async fn async_main() -> LuaResult<()> {
             );
         },
     );
-    time!(render, "render");
-    yield_lua().await;
     let mut png = Vec::new();
     output.write_to(Cursor::new(&mut png), ImageFormat::Png)?;
 
-    write_cc("/shared/out.png", &png).await?;
+    fs::write("target/output.png", png).map_err(|e| format!("write output.png failed: {e}"))?;
     Ok(())
 }
