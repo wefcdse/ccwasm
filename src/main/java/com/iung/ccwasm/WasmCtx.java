@@ -11,7 +11,7 @@ import com.iung.ccwasm.wasm_api.IOHandler;
 import com.iung.ccwasm.wasm_api.IOValue;
 import com.iung.ccwasm.wasm_api.StdioBuffer;
 import dan200.computercraft.api.lua.*;
-import net.fabricmc.loader.api.FabricLoader;
+import net.neoforged.fml.loading.FMLPaths;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -117,7 +117,7 @@ public class WasmCtx implements IDynamicLuaObject {
     }
 
     static Function<Instance, Machine> aotFactory(WasmModule module) {
-        Path cacheDir = FabricLoader.getInstance().getGameDir().resolve("wasm_cache");
+        Path cacheDir = FMLPaths.GAMEDIR.get().resolve("wasm_cache");
         try {
             return MachineFactoryCompiler.builder(module)
                     .withCache(new DirectoryCache(cacheDir))

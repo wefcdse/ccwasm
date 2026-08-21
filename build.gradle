@@ -1,25 +1,39 @@
 plugins {
-    id 'fabric-loom' version '1.15.2'
+    id 'java-library'
     id 'maven-publish'
-    id 'com.gradleup.shadow' version '8.3.2'
+    id 'net.neoforged.moddev' version '2.0.144'
+    id 'idea'
 }
 
+group = project.mod_group_id
 version = project.mod_version
-group = project.maven_group
+base.archivesName = project.mod_id
 
-base {
-    archivesName = project.archives_base_name
+var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
+    var replaceProperties = [
+            minecraft_version      : minecraft_version,
+            minecraft_version_range: minecraft_version_range,
+            neo_version            : neo_version,
+            neo_version_range      : neo_version_range,
+            mod_id                 : project.mod_id,
+            mod_name               : project.mod_name,
+            mod_license            : project.mod_license,
+            mod_version            : project.mod_version,
+            mod_authors            : project.mod_authors,
+            loader_version_range   : loader_version_range,
+            mod_description        : mod_description
+    ]
+    inputs.properties replaceProperties
+    expand replaceProperties
+    from "src/main/templates"
+    into "build/generated/sources/modMetadata"
 }
+sourceSets.main.resources.srcDir generateModMetadata
+neoForge.ideSyncTask generateModMetadata
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
     maven {
-        name = "SquidDev"
-        url = "https://maven.squiddev.cc/"
+        url "https://maven.squiddev.cc/"
         content {
             includeGroup("cc.tweaked")
             includeModule("org.squiddev", "Cobalt")
@@ -27,59 +41,59 @@ repositories {
     }
 }
 
-loom {
-    splitEnvironmentSourceSets()
+neoForge {
+    version = neo_version
 
-    mods {
-        "ccwasm" {
-            sourceSet sourceSets.main
-            sourceSet sourceSets.client
-        }
+    parchment {
+        mappingsVersion = parchment_mappings_version
+        minecraftVersion = parchment_minecraft_version
     }
 
-}
+    mods {
+        "${mod_id}" { sourceSet(sourceSets.main) }
+    }
 
-fabricApi {
-    configureDataGeneration()
+    runs {
+        client {
+            client()
+        }
+        server {
+            server()
+        }
+    }
 }
 
 dependencies {
-    // To change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    // Fabric API. This is technically optional, but you probably want it anyway.
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly "cc.tweaked:cc-tweaked-1.21.1-forge-api:1.117.1"
+    implementation "cc.tweaked:cc-tweaked-1.21.1-forge:1.117.1"
 
-modImplementation("cc.tweaked:cc-tweaked-1.21.1-fabric:1.117.1")
-    // transitive deps (night-config, cobalt, netty, jzlib) come from the SquidDev maven pom
     // javax.annotation.Nullable (not shipped with the JDK since Java 11)
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    api shadow ('com.dylibso.chicory:runtime:1.7.5')
-    api shadow ('com.dylibso.chicory:compiler:1.7.5')
-    api shadow ('com.dylibso.chicory:wasi:1.7.5')
-    api shadow ('com.dylibso.chicory:dircache-experimental:1.7.5')
-//    api shadow('org.ow2.asm:asm-commons')
-//    implementation("org.graalvm.polyglot:polyglot:23.1.1")
-//    implementation("org.graalvm.polyglot:wasm:23.1.1")
 
+    jarJar(implementation "com.dylibso.chicory:runtime:1.7.5")
+    jarJar(implementation "com.dylibso.chicory:compiler:1.7.5")
+    jarJar(implementation "com.dylibso.chicory:wasi:1.7.5")
+    jarJar(implementation "com.dylibso.chicory:wasm:1.7.5")
+    jarJar(implementation "com.dylibso.chicory:log:1.7.5")
+    jarJar(implementation "com.dylibso.chicory:dircache-experimental:1.7.5")
 
+    additionalRuntimeClasspath "com.dylibso.chicory:runtime:1.7.5"
+    additionalRuntimeClasspath "com.dylibso.chicory:compiler:1.7.5"
+    additionalRuntimeClasspath "com.dylibso.chicory:wasi:1.7.5"
+    additionalRuntimeClasspath "com.dylibso.chicory:wasm:1.7.5"
+    additionalRuntimeClasspath "com.dylibso.chicory:log:1.7.5"
+    additionalRuntimeClasspath "com.dylibso.chicory:dircache-experimental:1.7.5"
 }
-tasks.named('shadowJar', com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar) {
-    dependencies {
-        exclude {
-            it.moduleGroup != 'com.dylibso.chicory'
-//                    && it.moduleGroup != 'org.ow2.asm'
+
+// NeoForge 21.1.229 pins org.ow2.asm to {strictly 9.8} on its apiElements, but
+// Chicory 1.7.5's compiler needs ASM 9.9.1. Override every ASM module to 9.9.1
+// so the two can coexist on the compile classpath. Chicory bundles its own ASM
+// via jarJar, so this does not affect NeoForge's runtime copy.
+configurations.configureEach {
+    resolutionStrategy.eachDependency { details ->
+        if (details.requested.group == 'org.ow2.asm') {
+            details.useVersion('9.9.1')
         }
-    }
-}
-
-
-processResources {
-    inputs.property "version", project.version
-
-    filesMatching("fabric.mod.json") {
-        expand "version": project.version
     }
 }
 
@@ -89,35 +103,39 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
     withSourcesJar()
 
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+tasks.named('wrapper') {
+    distributionType = Wrapper.DistributionType.ALL
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+def licenseName = "LICENSE_" + mod_id
+
 jar {
     from("LICENSE") {
-        rename { "${it}_${project.base.archivesName.get()}" }
+        rename { _ -> licenseName }
     }
 }
 
-// configure the maven publication
 publishing {
     publications {
         create("mavenJava", MavenPublication) {
-            artifactId = project.archives_base_name
+            artifactId = project.mod_id
             from components.java
         }
     }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
     repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
     }
 }
