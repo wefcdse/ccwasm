@@ -26,12 +26,12 @@
 	"mixins": [
 	],
 	"depends": {
-		"fabricloader": ">=0.16.5",
-		"minecraft": "~1.20.1",
-		"java": ">=17",
+		"fabricloader": ">=0.16.14",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"computercraft": ">=1.111.0"
+		"computercraft": ">=1.113.0"
 	}
 }

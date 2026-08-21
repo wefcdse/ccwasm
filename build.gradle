@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.7-SNAPSHOT'
+    id 'fabric-loom' version '1.15.2'
     id 'maven-publish'
     id 'com.gradleup.shadow' version '8.3.2'
 }
@@ -18,7 +18,8 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
     maven {
-        url "https://squiddev.cc/maven/"
+        name = "SquidDev"
+        url = "https://maven.squiddev.cc/"
         content {
             includeGroup("cc.tweaked")
             includeModule("org.squiddev", "Cobalt")
@@ -50,8 +51,10 @@ dependencies {
     // Fabric API. This is technically optional, but you probably want it anyway.
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    modCompileOnly("cc.tweaked:cc-tweaked-1.20.1-fabric-api:1.111.0")
-    modImplementation("cc.tweaked:cc-tweaked-1.20.1-fabric:1.111.0")
+modImplementation("cc.tweaked:cc-tweaked-1.21.1-fabric:1.117.1")
+    // transitive deps (night-config, cobalt, netty, jzlib) come from the SquidDev maven pom
+    // javax.annotation.Nullable (not shipped with the JDK since Java 11)
+    compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     api shadow ('com.dylibso.chicory:runtime:1.7.5')
     api shadow ('com.dylibso.chicory:compiler:1.7.5')
     api shadow ('com.dylibso.chicory:wasi:1.7.5')
@@ -81,7 +84,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-    it.options.release = 17
+    it.options.release = 21
     it.options.compilerArgs += ["-Xlint:unchecked", "-Xlint:deprecation"]
 }
 
@@ -91,8 +94,8 @@ java {
     // If you remove this line, sources will not be generated.
     withSourcesJar()
 
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
